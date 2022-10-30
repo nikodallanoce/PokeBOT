@@ -21,6 +21,7 @@ async def run_bot_local():
 
     # Let them challenge each other
     cross_evaluation = await cross_evaluate(players, n_challenges=100)
+    print("All battles ended, wait for the results")
 
     # Display the results
     table = [["-"] + [p.username for p in players]]
