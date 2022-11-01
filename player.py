@@ -5,21 +5,30 @@ from battle_utilities import compute_damage, can_out_speed_pokemon
 
 class BestDamagePlayer(Player):
 
+    verbose = False
+
+    def set_verbose_state(self, state: bool):
+        self.verbose = state
+
     def choose_move(self, battle):
         bot_pokemon: Pokemon = battle.active_pokemon
         opponent_pokemon: Pokemon = battle.opponent_active_pokemon
         if battle.available_moves:
-            print("Turn {0}".format(battle.turn))
-            print("{0} ability: {1}, held item: {2}".format(bot_pokemon.species, bot_pokemon.ability, bot_pokemon.item))
-            print("Types: {0}".format(bot_pokemon.types))
-            print("{0} stats changes: {1}\n".format(bot_pokemon.species, bot_pokemon.boosts))
+            if self.verbose:
+                print("Turn {0}".format(battle.turn))
+                print("{0} ability: {1}, item: {2}".format(bot_pokemon.species, bot_pokemon.ability, bot_pokemon.item))
+                print("Types: {0}".format(bot_pokemon.types))
+                print("Stats changes: {0}\n".format(bot_pokemon.boosts))
+
             weather_list = list(battle.weather.keys())  # Weather condition
             field_list = list(battle.fields.keys())  # Terrain condition
             best_move: Move = max(battle.available_moves,
                                   key=lambda move: compute_damage(move, bot_pokemon, opponent_pokemon, weather_list,
-                                                                  field_list, True))
-            print("Bot pokemon out speed probability {0}".format(can_out_speed_pokemon(bot_pokemon, opponent_pokemon)))
-            print("Best move: {0}, type: {1}\n\n".format(best_move.id, best_move.type))
+                                                                  field_list, True, self.verbose))
+            if self.verbose:
+                print("Out speed probability {0}".format(can_out_speed_pokemon(bot_pokemon, opponent_pokemon)))
+                print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
+
             gimmick = False
             if battle.can_dynamax:
                 gimmick = True
@@ -27,18 +36,26 @@ class BestDamagePlayer(Player):
             return self.create_order(best_move, dynamax=gimmick)
         else:
             if battle.available_switches:
-                max_type_gain = -1
+                max_type_gain = -5
                 max_type_gain_pokemon = None
                 for pokemon in battle.available_switches:
-                    switch_gain = max([opponent_pokemon.damage_multiplier(switch_type)
-                                       for switch_type in opponent_pokemon.types if switch_type is not None])
-                    if max_type_gain < switch_gain:
-                        max_type_gain = switch_gain
+                    # Consider the bot type match-up
+                    bot_type_gain = max([opponent_pokemon.damage_multiplier(switch_type)
+                                         for switch_type in pokemon.types if switch_type is not None])
+
+                    # Consider the opponent type match-up
+                    opponent_type_gain = max([bot_pokemon.damage_multiplier(opponent_type)
+                                              for opponent_type in opponent_pokemon.types if opponent_type is not None])
+                    type_gain = bot_type_gain - opponent_type_gain
+                    if max_type_gain < type_gain:
+                        max_type_gain = type_gain
                         max_type_gain_pokemon = pokemon
 
-                    print("Pokemon: {0}, Type gain: {1}".format(pokemon, switch_gain))
+                    if self.verbose:
+                        print("Pokemon: {0}, Type gain: {1}".format(pokemon, type_gain))
 
-                print("Switching to: {0}\n\n".format(max_type_gain_pokemon))
+                if self.verbose:
+                    print("Switching to: {0}\n{1}\n".format(max_type_gain_pokemon, "-" * 100))
                 return self.create_order(max_type_gain_pokemon)
 
             return self.choose_random_move(battle)
@@ -50,6 +67,9 @@ class MaxBasePowerPlayer(Player):
         if battle.available_moves:
             best_move: Move = max(battle.available_moves, key=lambda move: move.base_power)
             gimmick = False
+            if battle.can_dynamax:
+                gimmick = True
+
             return self.create_order(best_move, dynamax=gimmick)
         else:
             return self.choose_random_move(battle)

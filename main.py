@@ -21,7 +21,6 @@ async def run_bot_local():
 
     # Let them challenge each other
     cross_evaluation = await cross_evaluate(players, n_challenges=100)
-    print("All battles ended, wait for the results")
 
     # Display the results
     table = [["-"] + [p.username for p in players]]
@@ -39,6 +38,7 @@ async def run_bot_online():
     # Set up the bot
     player_config = PlayerConfiguration(bot_username, bot_password)
     player = BestDamagePlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
+    player.set_verbose_state(True)
 
     # Accept all challenges regardless the user
     await player.accept_challenges(None, 1)
