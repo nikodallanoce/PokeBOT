@@ -1,16 +1,22 @@
 from poke_env.environment import Move, Pokemon
 from poke_env.player import Player
 from battle_utilities import compute_damage, can_out_speed_pokemon
+import time
+
+
+class RuleBasedPlayer(Player):
+
+    def choose_move(self, battle):
+        return None
 
 
 class BestDamagePlayer(Player):
 
     verbose = False
-
-    def set_verbose_state(self, state: bool):
-        self.verbose = state
+    can_switch = False
 
     def choose_move(self, battle):
+        start = time.time()
         bot_pokemon: Pokemon = battle.active_pokemon
         opponent_pokemon: Pokemon = battle.opponent_active_pokemon
         if battle.available_moves:
@@ -33,9 +39,10 @@ class BestDamagePlayer(Player):
             if battle.can_dynamax:
                 gimmick = True
 
+            print(time.time() - start)
             return self.create_order(best_move, dynamax=gimmick)
         else:
-            if battle.available_switches:
+            if battle.available_switches and self.can_switch:
                 max_type_gain = -5
                 max_type_gain_pokemon = None
                 for pokemon in battle.available_switches:
@@ -44,7 +51,7 @@ class BestDamagePlayer(Player):
                                          for switch_type in pokemon.types if switch_type is not None])
 
                     # Consider the opponent type match-up
-                    opponent_type_gain = max([bot_pokemon.damage_multiplier(opponent_type)
+                    opponent_type_gain = max([pokemon.damage_multiplier(opponent_type)
                                               for opponent_type in opponent_pokemon.types if opponent_type is not None])
                     type_gain = bot_type_gain - opponent_type_gain
                     if max_type_gain < type_gain:

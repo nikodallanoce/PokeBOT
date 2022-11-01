@@ -1,6 +1,6 @@
 from poke_env import PlayerConfiguration, ShowdownServerConfiguration
 import asyncio
-from poke_env.player import RandomPlayer, cross_evaluate, baselines
+from poke_env.player import cross_evaluate, baselines
 from tabulate import tabulate
 from player import BestDamagePlayer, MaxBasePowerPlayer
 import os
@@ -16,8 +16,14 @@ def parse_arguments(known=False):
 
 async def run_bot_local():
     # Create the players
-    players = [BestDamagePlayer(max_concurrent_battles=10), MaxBasePowerPlayer(max_concurrent_battles=10),
-               baselines.SimpleHeuristicsPlayer(max_concurrent_battles=10), RandomPlayer(max_concurrent_battles=10)]
+    first_player = BestDamagePlayer(player_configuration=PlayerConfiguration("BestDamage", None),
+                                    max_concurrent_battles=10)
+    first_player.can_switch = True
+    second_player = BestDamagePlayer(player_configuration=PlayerConfiguration("BestDamageNoSwitch", None),
+                                     max_concurrent_battles=10)
+    baseline = baselines.SimpleHeuristicsPlayer(player_configuration=PlayerConfiguration("Baseline", None),
+                                                max_concurrent_battles=10)
+    players = [first_player, second_player, MaxBasePowerPlayer(max_concurrent_battles=10), baseline]
 
     # Let them challenge each other
     cross_evaluation = await cross_evaluate(players, n_challenges=100)
@@ -38,7 +44,8 @@ async def run_bot_online():
     # Set up the bot
     player_config = PlayerConfiguration(bot_username, bot_password)
     player = BestDamagePlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
-    player.set_verbose_state(True)
+    player.verbose = True
+    player.can_switch = True
 
     # Accept all challenges regardless the user
     await player.accept_challenges(None, 1)

@@ -221,7 +221,8 @@ def __compute_other_damage_multipliers(move: Move, attacker: Pokemon, defender: 
         damage_multiplier *= .75
 
     # Pokèmon with the following abilities receive 0.5 less damage from super-effective moves while at full hp
-    if defender.ability in ["multiscale", "shadowshield"] and defender.current_hp_fraction == 1:
+    if defender.ability in ["multiscale", "shadowshield"] and defender.current_hp_fraction == 1\
+            and defender.damage_multiplier(move) >= 2:
         damage_multiplier *= 0.5
 
     # Pokèmon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
@@ -255,7 +256,7 @@ def compute_damage(move: Move,
     # One hit KO moves do as much damage as the remaining hp if the attacker's level is equal or higher
     # than the defender's, otherwise they deal no damage
     if move.id in ["fissure", "guillotine", "horndrill", "sheercold"]:
-        if defender.level <= attacker.level:
+        if defender.level <= attacker.level and defender.damage_multiplier(move) > 0:
             return defender.current_hp
         else:
             return 0
