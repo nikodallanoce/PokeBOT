@@ -3,7 +3,7 @@ import asyncio
 from poke_env.player import cross_evaluate, baselines
 from tabulate import tabulate
 from player import BestDamagePlayer, MaxBasePowerPlayer
-import os
+import sys
 import argparse
 
 
@@ -38,8 +38,8 @@ async def run_bot_local():
 
 async def run_bot_online():
     # Retrieve bot username and password
-    bot_username = os.getenv('BotAIF_username')
-    bot_password = os.environ.get('BotAIF_password')
+    bot_username = sys.argv[1]
+    bot_password = sys.argv[2]
 
     # Set up the bot
     player_config = PlayerConfiguration(bot_username, bot_password)
@@ -52,8 +52,7 @@ async def run_bot_online():
 
 
 if __name__ == '__main__':
-    opt_parser = parse_arguments()
-    remote_server = opt_parser.remote
+    remote_server = True
     if remote_server:
         asyncio.get_event_loop().run_until_complete(run_bot_online())
     else:

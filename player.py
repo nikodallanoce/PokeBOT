@@ -1,7 +1,6 @@
 from poke_env.environment import Move, Pokemon
 from poke_env.player import Player
-from battle_utilities import compute_damage, can_out_speed_pokemon
-import time
+from battle_utilities import compute_damage, outspeed_prob
 
 
 class RuleBasedPlayer(Player):
@@ -16,7 +15,6 @@ class BestDamagePlayer(Player):
     can_switch = False
 
     def choose_move(self, battle):
-        start = time.time()
         bot_pokemon: Pokemon = battle.active_pokemon
         opponent_pokemon: Pokemon = battle.opponent_active_pokemon
         if battle.available_moves:
@@ -26,20 +24,19 @@ class BestDamagePlayer(Player):
                 print("Types: {0}".format(bot_pokemon.types))
                 print("Stats changes: {0}\n".format(bot_pokemon.boosts))
 
-            weather_list = list(battle.weather.keys())  # Weather condition
-            field_list = list(battle.fields.keys())  # Terrain condition
+            weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
+            terrain = None if len(battle.fields.keys()) == 0 else next(iter(battle.fields.keys()))
             best_move: Move = max(battle.available_moves,
-                                  key=lambda move: compute_damage(move, bot_pokemon, opponent_pokemon, weather_list,
-                                                                  field_list, True, self.verbose))
+                                  key=lambda move: compute_damage(move, bot_pokemon, opponent_pokemon, weather, terrain,
+                                                                  True, self.verbose))
             if self.verbose:
-                print("Out speed probability {0}".format(can_out_speed_pokemon(bot_pokemon, opponent_pokemon)))
+                print("Out speed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon, self.verbose)))
                 print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
 
             gimmick = False
             if battle.can_dynamax:
                 gimmick = True
 
-            print(time.time() - start)
             return self.create_order(best_move, dynamax=gimmick)
         else:
             if battle.available_switches and self.can_switch:

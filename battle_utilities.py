@@ -1,8 +1,8 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status
 from poke_env.environment.move_category import MoveCategory
-from poke_env.data import NATURES
 from poke_env.environment.pokemon_type import PokemonType
 from poke_env.environment.pokemon_gender import PokemonGender
+from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers
 
 
 STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
@@ -21,34 +21,7 @@ AURA_PULSE_MOVES_IDS = ["aurasphere", "darkpulse", "dragonpulse", "healpulse", "
 IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze"]
 
 
-def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 21, nature: str = "Neutral") -> int:
-    estimated_stat = 2 * pokemon.base_stats[stat] + ivs + evs
-    estimated_stat = int(estimated_stat * pokemon.level / 100) + 5
-
-    # The hp stat has a different computation than the others
-    if stat == "hp":
-        if pokemon.species == "shedinja":
-            return 1
-
-        estimated_stat += pokemon.level + 5
-    else:
-        # Compute nature multiplier
-        if nature != "Neutral":
-            estimated_stat = int(estimated_stat * NATURES[nature][stat])
-
-    return estimated_stat
-
-
-def compute_stat_boost(pokemon: Pokemon, stat: str) -> float:
-    if pokemon.boosts[stat] > 0:
-        stat_boost = (2 + pokemon.boosts[stat]) / 2
-    else:
-        stat_boost = 2 / (2 - pokemon.boosts[stat])
-
-    return stat_boost
-
-
-def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> [float, PokemonType]:
+def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
     move_type = move.type
     base_power_multiplier = 1
 
@@ -188,28 +161,31 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     if attacker.item == "wiseglasses" and move.category is MoveCategory.SPECIAL:
         base_power_multiplier *= 1.1
 
-    return base_power_multiplier, move_type
+    return {"power_multiplier": base_power_multiplier, "move_type": move_type}
 
 
 def __compute_other_damage_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> float:
     damage_multiplier = 1
-
     move_type = move.type
 
     # Pokèmon with the water absorb ability suffer no damage from water type moves
-    if move_type is PokemonType.WATER and defender.ability == "waterabsorb":
+    if move_type is PokemonType.WATER and "waterabsorb" in defender.possible_abilities:
+        return 0
+
+    # Pokèmon with the water absorb ability suffer no damage from water type moves
+    if move_type is PokemonType.GROUND and "levitate" in defender.possible_abilities:
         return 0
 
     # Pokèmon with the volt absorb ability suffer no damage from electric type moves
-    if move_type is PokemonType.ELECTRIC and defender.ability == "voltabsorb":
+    if move_type is PokemonType.ELECTRIC and "voltabsorb" in defender.possible_abilities:
         return 0
 
     # Pokèmon with the flash fire ability suffer no damage from fire type moves
-    if move_type is PokemonType.FIRE and defender.ability == "flashfire":
+    if move_type is PokemonType.FIRE and "flashfire" in defender.possible_abilities:
         return 0
 
     # Pokèmon with the sap sipper ability suffer no damage from grass type moves
-    if move_type is PokemonType.GRASS and defender.ability == "sapsipperr":
+    if move_type is PokemonType.GRASS and "sapsipperr" in defender.possible_abilities:
         return 0
 
     # Pokèmon with the wonder guard ability can only take damage from super-effective moves
@@ -239,8 +215,8 @@ def __compute_other_damage_multipliers(move: Move, attacker: Pokemon, defender: 
 def compute_damage(move: Move,
                    attacker: Pokemon,
                    defender: Pokemon,
-                   weather_list: list,
-                   field_list: list,
+                   weather: Weather,
+                   terrain: Field,
                    is_bot: bool,
                    verbose: bool = False) -> int:
     if move.category is MoveCategory.STATUS:
@@ -268,47 +244,58 @@ def compute_damage(move: Move,
     if move.id == "guardianofalola" and defender.damage_multiplier(move) > 0:
         return int(defender.current_hp * 0.75)
 
-    # move_type = move.type
-    base_power = move.base_power
-
     # Compute the effect of the attacker level
     level_multiplier = 2 * attacker.level / 5 + 2
 
     # Compute the ratio between the attacker atk/spa stat and the defender def/spd stat
+    attacker_stat = {"stat": None, "value": 0}
+    defender_stat = {"stat": None, "value": 0}
     if move.category is MoveCategory.PHYSICAL:
-        boosts_to_consider = ["atk", "def"]
-        if is_bot:
-            attack_stat = attacker.stats["atk"]
-            defense_stat = estimate_stat(defender, "def")
+        if move.id != "bodypress":
+            attacker_stat["stat"] = "atk"
         else:
-            attack_stat = estimate_stat(attacker, "atk")
-            defense_stat = defender.stats["def"]
+            attacker_stat["stat"] = "def"
+
+        defender_stat["stat"] = "def"
     else:
-        boosts_to_consider = ["spa", "spd"]
-        if is_bot:
-            attack_stat = attacker.stats["spa"]
-            defense_stat = estimate_stat(defender, "spd")
+        if move.id not in ["psyshock", "psystrike", "secretsword"]:
+            defender_stat["stat"] = "spd"
         else:
-            attack_stat = estimate_stat(attacker, "spa")
-            defense_stat = defender.stats["spd"]
+            defender_stat["stat"] = "def"
+
+        attacker_stat["stat"] = "spa"
+
+    if is_bot:
+        attacker_stat["value"] = attacker.stats[attacker_stat["stat"]]
+        defender_stat["value"] = defender.base_stats[defender_stat["stat"]]
+        defender_stat["value"] = estimate_stat(defender, defender_stat["stat"])
+    else:
+        attacker_stat["value"] = attacker.base_stats[attacker_stat["stat"]]
+        attacker_stat["value"] = estimate_stat(attacker, attacker_stat["stat"])
+        defender_stat["value"] = defender.stats[defender_stat["stat"]]
+
+    # Compute stat modifiers
+    attacker_stat["value"] = compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain, is_bot)
+    defender_stat["value"] = compute_stat_modifiers(defender, defender_stat["stat"], weather, terrain, not is_bot)
 
     if defender.ability != "unaware":
-        attack_stat *= compute_stat_boost(attacker, boosts_to_consider[0])
+        attacker_stat["value"] *= compute_stat_boost(attacker, attacker_stat["stat"])
 
     if attacker.ability != "unaware":
-        defense_stat *= compute_stat_boost(defender, boosts_to_consider[1])
+        defender_stat["value"] *= compute_stat_boost(defender, defender_stat["stat"])
 
-    ratio_attack_defense = attack_stat / defense_stat
+    ratio_attack_defense = attacker_stat["value"] / defender_stat["value"]
     if verbose:
         print("Move under evaluation: {0}".format(move.id))
-        print("Attacker (Bot): {0}, {1} Attack: {2}".format(attacker.species, move.category.name, int(attack_stat)))
-        print("Defender: {0}, {1} Defense: {2}".format(defender.species, move.category.name, int(defense_stat)))
+        print("Attacker: {0}, {1} {2}: {3}".format(attacker.species, move.category.name,
+                                                   attacker_stat["stat"], int(attacker_stat["value"])))
+        print("Defender: {0}, {1} {2}: {3}".format(defender.species, move.category.name,
+                                                   defender_stat["stat"], int(defender_stat["value"])))
 
     # Compute the move's power
-    base_power_multiplier, move_type = __compute_base_power_multipliers(move, attacker, defender)
-    power = int(base_power * base_power_multiplier)
-    if verbose:
-        print("Base power: {0}, Power: {1}, Type: {2}".format(base_power, power, move_type))
+    base_power_multiplier = __compute_base_power_multipliers(move, attacker, defender)
+    power = int(move.base_power * base_power_multiplier["power_multiplier"])
+    move_type = base_power_multiplier["move_type"]
 
     # Change the move type by effect of the attacker ability and held item
     if attacker.ability == "multitype" and move.id == "judgement" and attacker.item[-5:] == "plate":
@@ -317,13 +304,15 @@ def compute_damage(move: Move,
     if attacker.ability == "rkssystem" and move.id == "multiattack" and attacker.item[-6:] == "memory":
         move_type = PokemonType.from_name(attacker.item[:-6])
 
+    if verbose:
+        print("Base power: {0}, Power: {1}, Type: {2}".format(move.base_power, power, move_type))
+
     # Compute the base damage before taking into account any modifier
     damage = level_multiplier * power * ratio_attack_defense / 50 + 2
 
     # Compute the effect of the weather
     weather_multiplier = 1
-    if len(weather_list) > 0 and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
-        weather = weather_list[0]
+    if weather is not None and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
             if move_type is PokemonType.FIRE:
                 weather_multiplier = 1.5
@@ -341,28 +330,27 @@ def compute_damage(move: Move,
 
     damage *= weather_multiplier
 
-    # Compute the effect of the field
-    field_multiplier = 1
-    if len(field_list) > 0:
-        field = field_list[0]
-        if field is Field.ELECTRIC_TERRAIN:
+    # Compute the effect of the terrain
+    terrain_multiplier = 1
+    if terrain is not None:
+        if terrain is Field.ELECTRIC_TERRAIN:
             if move_type is PokemonType.ELECTRIC:
-                field_multiplier = 1.3
-        elif field is Field.GRASSY_TERRAIN:
+                terrain_multiplier = 1.3
+        elif terrain is Field.GRASSY_TERRAIN:
             if move_type is PokemonType.GRASS:
-                field_multiplier = 1.3
+                terrain_multiplier = 1.3
             elif move.id in ["earthquake", "magnitude", "bulldoze"]:
-                field_multiplier = 0.5
-        elif field is Field.MISTY_TERRAIN:
+                terrain_multiplier = 0.5
+        elif terrain is Field.MISTY_TERRAIN:
             if move_type is PokemonType.DRAGON:
-                field_multiplier = 0.5
-        elif field is Field.PSYCHIC_TERRAIN:
+                terrain_multiplier = 0.5
+        elif terrain is Field.PSYCHIC_TERRAIN:
             if move_type is PokemonType.PSYCHIC:
-                field_multiplier = 1.3
+                terrain_multiplier = 1.3
             elif move.priority > 0:
                 return 0
 
-    damage *= field_multiplier
+    damage *= terrain_multiplier
 
     # Compute the effect of the STAB
     if move_type in attacker.types:
@@ -398,7 +386,7 @@ def compute_damage(move: Move,
     return damage
 
 
-def can_out_speed_pokemon(bot_pokemon: Pokemon, opponent_pokemon: Pokemon) -> float:
+def outspeed_prob(bot_pokemon: Pokemon, opponent_pokemon: Pokemon, verbose: bool = False) -> float:
     # Retrieve the bot pokèmon speed
     bot_pokemon_speed = bot_pokemon.stats["spe"]
 
@@ -411,6 +399,9 @@ def can_out_speed_pokemon(bot_pokemon: Pokemon, opponent_pokemon: Pokemon) -> fl
     opponent_pokemon_speed_boost = compute_stat_boost(opponent_pokemon, "spe")
     opponent_pokemon_speed_lower = int(opponent_pokemon_speed_lower * opponent_pokemon_speed_boost)
     opponent_pokemon_speed_higher = int(opponent_pokemon_speed_higher * opponent_pokemon_speed_boost)
+    if verbose:
+        print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_pokemon_speed, opponent_pokemon.species,
+                                                      opponent_pokemon_speed_lower, opponent_pokemon_speed_higher))
 
     if bot_pokemon_speed < opponent_pokemon_speed_lower:
         return 0
