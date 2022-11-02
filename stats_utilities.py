@@ -1,4 +1,4 @@
-from poke_env.environment import Pokemon, Weather, Field, Status, PokemonType
+from poke_env.environment import Pokemon, Weather, Field, Status, PokemonType, Effect
 from poke_env.data import NATURES
 
 STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
@@ -25,12 +25,18 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 21, nat
 
 
 def compute_stat_boost(pokemon: Pokemon, stat: str) -> float:
-    if pokemon.boosts[stat] > 0:
-        stat_boost = (2 + pokemon.boosts[stat]) / 2
+    if stat not in ["accuracy, evasion"]:
+        if pokemon.boosts[stat] > 0:
+            stat_boost = (2 + pokemon.boosts[stat]) / 2
+        else:
+            stat_boost = 2 / (2 - pokemon.boosts[stat])
     else:
-        stat_boost = 2 / (2 - pokemon.boosts[stat])
+        if pokemon.boosts[stat] > 0:
+            stat_boost = (3 + pokemon.boosts[stat]) / 3
+        else:
+            stat_boost = 3 / (3 - pokemon.boosts[stat])
 
-    return stat_boost
+    return round(stat_boost, 2)
 
 
 def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
@@ -152,6 +158,45 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrain: 
     return spe_modifier
 
 
+def __compute_accuracy_modifiers(pokemon: Pokemon) -> float:
+    accuracy_modifier = 1
+
+    if pokemon.item == "widelens":
+        accuracy_modifier *= 1.1
+
+    if pokemon.item == "victorystar":
+        accuracy_modifier *= 1.1
+
+    if pokemon.item == "compoundeyes":
+        accuracy_modifier *= 1.3
+
+    if pokemon.item == "hustle":
+        accuracy_modifier *= 0.8
+
+    return accuracy_modifier
+
+
+def __compute_evasion_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
+    evasion_modifier = 1
+
+    if pokemon.ability == "sandveil" and weather is Weather.SANDSTORM:
+        evasion_modifier *= 1.2
+
+    if pokemon.ability == "tangledfeet" and Effect.CONFUSION in pokemon.effects:
+        evasion_modifier *= 1.5
+
+    if pokemon.ability == "snowcloak" and weather is Weather.HAIL:
+        evasion_modifier *= 1.2
+
+    if pokemon.item == "brigthpowder":
+        evasion_modifier *= 1.1
+
+    if pokemon.item == "laxincense":
+        evasion_modifier *= 1.05
+
+    return evasion_modifier
+
+
 def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None, terrain: Field = None) -> float:
     match stat:
         case "atk":
@@ -164,5 +209,9 @@ def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None,
             return __compute_spd_modifiers(pokemon, weather)
         case "spe":
             return __compute_spe_modifiers(pokemon, weather, terrain)
+        case "accuracy":
+            return __compute_accuracy_modifiers(pokemon)
+        case "evasion":
+            return __compute_evasion_modifiers(pokemon, weather)
 
     return 1

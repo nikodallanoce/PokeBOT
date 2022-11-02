@@ -1,9 +1,8 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
-from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers
+from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
 
-STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
                       "firepunch", "focuspunch", "hammerarm", "icehammer", "icepunch", "machpunch",
                       "megapunch", "poweruppunch", "shadowpunch", "skyuppercut", "thunderpunch"]
@@ -159,8 +158,8 @@ def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pok
         return 0
 
     # Pokèmon with the volt absorb ability suffer no damage from electric type moves
-    if move_type is PokemonType.ELECTRIC and "voltabsorb" in defender.possible_abilities \
-            or "motordrive" in defender.possible_abilities:
+    if move_type is PokemonType.ELECTRIC and ("voltabsorb" in defender.possible_abilities
+                                              or "motordrive" in defender.possible_abilities):
         return 0
 
     # Pokèmon with the flash fire ability suffer no damage from fire type moves
