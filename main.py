@@ -23,10 +23,10 @@ async def run_bot_local():
                                      max_concurrent_battles=10)
     baseline = baselines.SimpleHeuristicsPlayer(player_configuration=PlayerConfiguration("Baseline", None),
                                                 max_concurrent_battles=10)
-    players = [first_player, second_player, MaxBasePowerPlayer(max_concurrent_battles=10), baseline]
+    players = [first_player, baseline]
 
     # Let them challenge each other
-    cross_evaluation = await cross_evaluate(players, n_challenges=100)
+    cross_evaluation = await cross_evaluate(players, n_challenges=1)
 
     # Display the results
     table = [["-"] + [p.username for p in players]]
