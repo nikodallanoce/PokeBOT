@@ -36,7 +36,13 @@ class BestDamagePlayer(Player):
 
             gimmick = False
             if battle.can_dynamax:
-                gimmick = True
+                if len(battle.available_switches) > 0:
+                    gimmick = True
+                elif bot_pokemon.current_hp == bot_pokemon.max_hp:
+                    gimmick = True
+                    for pokemon in battle.available_switches:
+                        if pokemon.current_hp == pokemon.max_hp:
+                            gimmick = False
 
             return self.create_order(best_move, dynamax=gimmick)
         else:
