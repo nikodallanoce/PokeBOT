@@ -53,7 +53,8 @@ async def run_bot_online():
 
 if __name__ == '__main__':
     remote_server = True
+    run_bot = asyncio.new_event_loop()
     if remote_server:
-        asyncio.get_event_loop().run_until_complete(run_bot_online())
+        run_bot.run_until_complete(run_bot_online())
     else:
-        asyncio.get_event_loop().run_until_complete(run_bot_local())
+        run_bot.run_until_complete(run_bot_local())

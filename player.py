@@ -1,6 +1,6 @@
 from poke_env.environment import Move, Pokemon
 from poke_env.player import Player
-from battle_utilities import compute_damage, outspeed_prob
+from battle_utilities import compute_damage, outspeed_prob, compute_move_accuracy
 
 
 class RuleBasedPlayer(Player):
@@ -31,7 +31,7 @@ class BestDamagePlayer(Player):
                                                                   True, self.verbose))
             if self.verbose:
                 print("Outspeed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon,
-                                                                       weather, terrain, self.verbose)))
+                                                                      weather, terrain, self.verbose)))
                 print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
 
             gimmick = False
