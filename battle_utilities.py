@@ -1,11 +1,8 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
-from poke_env.environment.pokemon_gender import PokemonGender
-from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers
+from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
 
-
-STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
                       "firepunch", "focuspunch", "hammerarm", "icehammer", "icepunch", "machpunch",
                       "megapunch", "poweruppunch", "shadowpunch", "skyuppercut", "thunderpunch"]
@@ -36,14 +33,6 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     # The power of the move "venoshock" is doubled if the defender is poisoned
     if move.id == "venoshock" and defender.status in [Status.PSN, Status.TOX]:
         base_power_multiplier *= 2
-
-    # Pokèmon with the rivalry ability deal 1.25 more damage to pokèmon of the same gender,
-    # while dealing 0.75 less damage to the ones from the opposite gender
-    if attacker.ability == "rivalry" and attacker.gender is not PokemonGender.NEUTRAL:
-        if attacker.gender == defender.gender:
-            base_power_multiplier *= 1.25
-        else:
-            base_power_multiplier *= 0.75
 
     # Moves of pokèmon with the following abilities have their power increased if the hp is less or equal than 1/3
     if attacker.current_hp_fraction <= 0.33:
@@ -145,14 +134,6 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     if attacker.ability in ["steelworker", "steelyspirit"] and move_type is PokemonType.STEEL:
         base_power_multiplier *= 1.5
 
-    # The "heatproof" ability, while defending, reduces the power of fire moves,
-    # meanwhile the "dry skin" ability does the opposite
-    if move_type is PokemonType.FIRE and attacker.ability not in IGNORE_EFFECT_ABILITIES_IDS:
-        if defender.ability == "heatproof":
-            base_power_multiplier *= 0.5
-        elif defender.ability == "dryskin":
-            base_power_multiplier *= 1.25
-
     # The "muscleband" item boosts the power of physical moves
     if attacker.item == "muscleband" and move.category is MoveCategory.PHYSICAL:
         base_power_multiplier *= 1.1
@@ -164,8 +145,8 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     return {"power_multiplier": base_power_multiplier, "move_type": move_type}
 
 
-def __compute_other_damage_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> float:
-    damage_multiplier = 1
+def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pokemon, weather: Weather) -> float:
+    damage_modifier = 1
     move_type = move.type
 
     # Pokèmon with the water absorb ability suffer no damage from water type moves
@@ -177,7 +158,8 @@ def __compute_other_damage_multipliers(move: Move, attacker: Pokemon, defender: 
         return 0
 
     # Pokèmon with the volt absorb ability suffer no damage from electric type moves
-    if move_type is PokemonType.ELECTRIC and "voltabsorb" in defender.possible_abilities:
+    if move_type is PokemonType.ELECTRIC and ("voltabsorb" in defender.possible_abilities
+                                              or "motordrive" in defender.possible_abilities):
         return 0
 
     # Pokèmon with the flash fire ability suffer no damage from fire type moves
@@ -194,22 +176,33 @@ def __compute_other_damage_multipliers(move: Move, attacker: Pokemon, defender: 
 
     # Pokèmon with the following abilities receive 0.75 less damage from super-effective moves
     if defender.ability in ["filter", "solidrock", "prismarmor"] and defender.damage_multiplier(move) >= 2:
-        damage_multiplier *= .75
+        damage_modifier *= .75
 
     # Pokèmon with the following abilities receive 0.5 less damage from super-effective moves while at full hp
     if defender.ability in ["multiscale", "shadowshield"] and defender.current_hp_fraction == 1\
             and defender.damage_multiplier(move) >= 2:
-        damage_multiplier *= 0.5
+        damage_modifier *= 0.5
+
+    # The "heatproof" ability, while defending, reduces fire moves damage,
+    # meanwhile the "dry skin" ability does the opposite
+    if move_type is PokemonType.FIRE and attacker.ability not in IGNORE_EFFECT_ABILITIES_IDS:
+        if defender.ability == "heatproof":
+            damage_modifier *= 0.5
+        elif defender.ability == "dryskin":
+            if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
+                damage_modifier *= 2
+            else:
+                damage_modifier *= 1.25
 
     # Pokèmon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
     if attacker.ability == "neuroforce" and defender.damage_multiplier(move) >= 2:
-        damage_multiplier *= 1.25
+        damage_modifier *= 1.25
 
     # Pokèmon that held the life orb item deal 1.1 damage
     if attacker.item == "lifeorb":
-        damage_multiplier *= 1.299
+        damage_modifier *= 1.299
 
-    return damage_multiplier
+    return damage_modifier
 
 
 def compute_damage(move: Move,
@@ -275,8 +268,8 @@ def compute_damage(move: Move,
         defender_stat["value"] = defender.stats[defender_stat["stat"]]
 
     # Compute stat modifiers
-    attacker_stat["value"] = compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain, is_bot)
-    defender_stat["value"] = compute_stat_modifiers(defender, defender_stat["stat"], weather, terrain, not is_bot)
+    attacker_stat["value"] *= compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain)
+    defender_stat["value"] *= compute_stat_modifiers(defender, defender_stat["stat"], weather, terrain)
 
     if defender.ability != "unaware":
         attacker_stat["value"] *= compute_stat_boost(attacker, attacker_stat["stat"])
@@ -284,7 +277,7 @@ def compute_damage(move: Move,
     if attacker.ability != "unaware":
         defender_stat["value"] *= compute_stat_boost(defender, defender_stat["stat"])
 
-    ratio_attack_defense = attacker_stat["value"] / defender_stat["value"]
+    ratio_attack_defense = int(attacker_stat["value"]) / int(defender_stat["value"])
     if verbose:
         print("Move under evaluation: {0}".format(move.id))
         print("Attacker: {0}, {1} {2}: {3}".format(attacker.species, move.category.name,
@@ -373,7 +366,7 @@ def compute_damage(move: Move,
     damage *= type_multiplier
 
     # Compute the effect of various abilities and items
-    other_damage_multipliers = __compute_other_damage_multipliers(move, attacker, defender)
+    other_damage_multipliers = __compute_other_damage_modifier(move, attacker, defender, weather)
     damage = int(damage * other_damage_multipliers)
 
     # The move false swipe will never kill the pokèmon
@@ -386,27 +379,37 @@ def compute_damage(move: Move,
     return damage
 
 
-def outspeed_prob(bot_pokemon: Pokemon, opponent_pokemon: Pokemon, verbose: bool = False) -> float:
+def outspeed_prob(bot_pokemon: Pokemon,
+                  opponent_pokemon: Pokemon,
+                  weather: Weather = None,
+                  terrain: Field = None,
+                  verbose: bool = False) -> float:
     # Retrieve the bot pokèmon speed
-    bot_pokemon_speed = bot_pokemon.stats["spe"]
+    bot_spe = bot_pokemon.stats["spe"]
 
     # Estimate the lower and higher bound for the opponent pokèmon speed, assume that ivs are 31 for both cases
-    opponent_pokemon_speed_lower = estimate_stat(opponent_pokemon, "spe", evs=0)
-    opponent_pokemon_speed_higher = estimate_stat(opponent_pokemon, "spe", evs=64)
+    opponent_spe_lb = estimate_stat(opponent_pokemon, "spe", evs=0)
+    opponent_spe_ub = estimate_stat(opponent_pokemon, "spe", evs=63)
 
-    # Compute the boost to the stat if there are any
-    bot_pokemon_speed = int(bot_pokemon_speed * compute_stat_boost(bot_pokemon, "spe"))
-    opponent_pokemon_speed_boost = compute_stat_boost(opponent_pokemon, "spe")
-    opponent_pokemon_speed_lower = int(opponent_pokemon_speed_lower * opponent_pokemon_speed_boost)
-    opponent_pokemon_speed_higher = int(opponent_pokemon_speed_higher * opponent_pokemon_speed_boost)
+    # Compute the modifiers to the stat
+    bot_spe *= compute_stat_modifiers(bot_pokemon, "spe", weather, terrain)
+    opponent_spe_modifier = compute_stat_modifiers(opponent_pokemon, "spe", weather, terrain)
+    opponent_spe_lb *= opponent_spe_modifier
+    opponent_spe_ub *= opponent_spe_modifier
+
+    # Compute the boost to the stat
+    bot_spe = int(bot_spe * compute_stat_boost(bot_pokemon, "spe"))
+    opponent_spe_boost = compute_stat_boost(opponent_pokemon, "spe")
+    opponent_spe_lb = int(opponent_spe_lb * opponent_spe_boost)
+    opponent_spe_ub = int(opponent_spe_ub * opponent_spe_boost)
     if verbose:
-        print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_pokemon_speed, opponent_pokemon.species,
-                                                      opponent_pokemon_speed_lower, opponent_pokemon_speed_higher))
+        print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_spe, opponent_pokemon.species,
+                                                      opponent_spe_lb, opponent_spe_ub))
 
-    if bot_pokemon_speed < opponent_pokemon_speed_lower:
+    if bot_spe < opponent_spe_lb:
         return 0
-    elif bot_pokemon_speed > opponent_pokemon_speed_higher:
+    elif bot_spe > opponent_spe_ub:
         return 1
     else:
-        prob_out_speed = (bot_pokemon_speed - opponent_pokemon_speed_lower) / 64
+        prob_out_speed = (bot_spe - opponent_spe_lb) / 63
         return round(prob_out_speed, 2)
