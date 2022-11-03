@@ -421,7 +421,7 @@ def compute_move_accuracy(move: Move,
                           terrain: Field = None,
                           verbose: bool = False) -> float:
     # Some moves can't miss
-    if move.accuracy is True:
+    if move.accuracy is True or attacker.is_dynamaxed:
         if verbose:
             print("Move {0} accuracy: {1}".format(move.id, 1))
 
