@@ -1,4 +1,4 @@
-from poke_env.environment import Move, Pokemon
+from poke_env.environment import Move, Pokemon, Battle, Weather, Field
 from poke_env.player import Player
 from battle_utilities import compute_damage, outspeed_prob
 
@@ -10,13 +10,13 @@ class RuleBasedPlayer(Player):
 
 
 class BestDamagePlayer(Player):
-
     verbose = False
     can_switch = False
 
     def choose_move(self, battle):
         bot_pokemon: Pokemon = battle.active_pokemon
         opponent_pokemon: Pokemon = battle.opponent_active_pokemon
+        self.matchup(battle)
         if battle.available_moves:
             if self.verbose:
                 print("Turn {0}".format(battle.turn))
@@ -31,7 +31,7 @@ class BestDamagePlayer(Player):
                                                                   True, self.verbose))
             if self.verbose:
                 print("Outspeed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon,
-                                                                       weather, terrain, self.verbose)))
+                                                                      weather, terrain, self.verbose)))
                 print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
 
             gimmick = False
@@ -64,6 +64,45 @@ class BestDamagePlayer(Player):
                 return self.create_order(max_type_gain_pokemon)
 
             return self.choose_random_move(battle)
+
+    def matchup(self, battle):
+        outspeed_p = outspeed_prob(battle.active_pokemon, battle.opponent_active_pokemon)
+        type_adv = self.type_advantage(battle.active_pokemon, battle.opponent_active_pokemon)
+
+        weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
+        terrain = None if len(battle.fields.keys()) == 0 else next(iter(battle.fields.keys()))
+
+        move_damage_att = self.move_with_max_damage(battle.active_pokemon, battle.opponent_active_pokemon, weather, terrain,
+                                                True)
+        move_damage_def = self.move_with_max_damage(battle.opponent_active_pokemon, battle.active_pokemon, weather, terrain,
+                                                False)
+
+        print()
+
+    def type_advantage(self, bot_pokemon: Pokemon, opponent_pokemon: Pokemon) -> float:
+        # Consider the bot type match-up
+        bot_type_gain = max([opponent_pokemon.damage_multiplier(bot_type)
+                             for bot_type in bot_pokemon.types if bot_type is not None])
+
+        # Consider the opponent type match-up
+        opponent_type_gain = max([bot_pokemon.damage_multiplier(opponent_type)
+                                  for opponent_type in opponent_pokemon.types if opponent_type is not None])
+        type_gain = bot_type_gain - opponent_type_gain
+        return type_gain
+
+    def move_with_max_damage(self, attacker: Pokemon, defender: Pokemon, weather: Weather, terrain: Field,
+                             is_bot: bool) -> {
+        Move: float}:
+
+        max_damage = -1
+        max_damage_move = None
+        for move in attacker.moves.values():
+            damage = compute_damage(move, attacker, defender, weather, terrain, is_bot, verbose=False)
+            if damage > max_damage:
+                max_damage = damage
+                max_damage_move = move
+
+        return {max_damage_move: max_damage}
 
 
 class MaxBasePowerPlayer(Player):

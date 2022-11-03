@@ -23,10 +23,10 @@ async def run_bot_local():
                                      max_concurrent_battles=10)
     baseline = baselines.SimpleHeuristicsPlayer(player_configuration=PlayerConfiguration("Baseline", None),
                                                 max_concurrent_battles=10)
-    players = [first_player, second_player, MaxBasePowerPlayer(max_concurrent_battles=10), baseline]
+    players = [baseline, second_player]
 
     # Let them challenge each other
-    cross_evaluation = await cross_evaluate(players, n_challenges=100)
+    cross_evaluation = await cross_evaluate(players, n_challenges=1)
 
     # Display the results
     table = [["-"] + [p.username for p in players]]
@@ -53,6 +53,7 @@ async def run_bot_online():
 
 if __name__ == '__main__':
     remote_server = True
+
     if remote_server:
         asyncio.get_event_loop().run_until_complete(run_bot_online())
     else:
