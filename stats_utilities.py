@@ -182,7 +182,7 @@ def __compute_evasion_modifiers(pokemon: Pokemon, weather: Weather = None) -> fl
     if pokemon.ability == "sandveil" and weather is Weather.SANDSTORM:
         evasion_modifier *= 1.2
 
-    if pokemon.ability == "tangledfeet" and Effect.CONFUSION in pokemon.effects:
+    if pokemon.ability == "tangledfeet" and Effect.CONFUSION in list(pokemon.effects.keys()):
         evasion_modifier *= 1.5
 
     if pokemon.ability == "snowcloak" and weather is Weather.HAIL:

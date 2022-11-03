@@ -30,7 +30,7 @@ class BestDamagePlayer(Player):
                                   key=lambda move: compute_damage(move, bot_pokemon, opponent_pokemon, weather, terrain,
                                                                   True, self.verbose))
             if self.verbose:
-                print("Out speed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon,
+                print("Outspeed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon,
                                                                        weather, terrain, self.verbose)))
                 print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
 
