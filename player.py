@@ -1,6 +1,6 @@
 from poke_env.environment import Move, Pokemon, Battle, Weather, Field, MoveCategory
 from poke_env.player import Player
-from battle_utilities import compute_damage, outspeed_prob
+from battle_utilities import compute_damage, outspeed_prob, compute_move_accuracy
 
 
 class RuleBasedPlayer(Player):
@@ -36,7 +36,13 @@ class BestDamagePlayer(Player):
 
             gimmick = False
             if battle.can_dynamax:
-                gimmick = True
+                if len(battle.available_switches) == 0:
+                    gimmick = True
+                elif bot_pokemon.current_hp_fraction == 1:
+                    gimmick = True
+                    for pokemon in battle.available_switches:
+                        if pokemon.current_hp_fraction == 1:
+                            gimmick = False
 
             return self.create_order(best_move, dynamax=gimmick)
         else:

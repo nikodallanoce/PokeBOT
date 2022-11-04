@@ -1,4 +1,4 @@
-from poke_env.environment import Pokemon, Move, Weather, Field, Status
+from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
 from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
@@ -15,7 +15,12 @@ SOUND_BASED_MOVES_IDS = ["boomburst", "bugbuzz", "chatter", "clangingscales", "c
                          "sparklingaura", "supersonic", "uproar"]
 AURA_PULSE_MOVES_IDS = ["aurasphere", "darkpulse", "dragonpulse", "healpulse", "originpulse",
                         "terrainpulse", "waterpulse"]
+PROTECTING_MOVES = ["banefulbunker", "detect", "kingsshield", "matblock", "obstruct", "protect",
+                    "spikyshield", "wideguard"]
 IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze"]
+ENTRY_HAZARDS = {"spikes": SideCondition.SPIKES, "stealhrock": SideCondition.STEALTH_ROCK,
+                 "stickyweb": SideCondition.STICKY_WEB, "toxicspikes": SideCondition.TOXIC_SPIKES}
+ANTI_HAZARDS_MOVES = ["rapidspin", "defog"]
 
 
 def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
@@ -179,8 +184,7 @@ def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pok
         damage_modifier *= .75
 
     # Pokèmon with the following abilities receive 0.5 less damage from super-effective moves while at full hp
-    if defender.ability in ["multiscale", "shadowshield"] and defender.current_hp_fraction == 1\
-            and defender.damage_multiplier(move) >= 2:
+    if defender.ability in ["multiscale", "shadowshield"] and defender.current_hp_fraction == 1:
         damage_modifier *= 0.5
 
     # The "heatproof" ability, while defending, reduces fire moves damage,
@@ -208,9 +212,9 @@ def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pok
 def compute_damage(move: Move,
                    attacker: Pokemon,
                    defender: Pokemon,
-                   weather: Weather,
-                   terrain: Field,
-                   is_bot: bool,
+                   weather: Weather = None,
+                   terrain: Field = None,
+                   is_bot: bool = False,
                    verbose: bool = False) -> int:
     if move.category is MoveCategory.STATUS:
         return 0
@@ -305,7 +309,7 @@ def compute_damage(move: Move,
 
     # Compute the effect of the weather
     weather_multiplier = 1
-    if weather is not None and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
+    if weather and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
             if move_type is PokemonType.FIRE:
                 weather_multiplier = 1.5
@@ -325,7 +329,7 @@ def compute_damage(move: Move,
 
     # Compute the effect of the terrain
     terrain_multiplier = 1
-    if terrain is not None:
+    if terrain:
         if terrain is Field.ELECTRIC_TERRAIN:
             if move_type is PokemonType.ELECTRIC:
                 terrain_multiplier = 1.3
@@ -413,3 +417,59 @@ def outspeed_prob(bot_pokemon: Pokemon,
     else:
         prob_out_speed = (bot_spe - opponent_spe_lb) / 63
         return round(prob_out_speed, 2)
+
+
+def compute_move_accuracy(move: Move,
+                          attacker: Pokemon,
+                          defender: Pokemon,
+                          weather: Weather = None,
+                          terrain: Field = None,
+                          verbose: bool = False) -> float:
+    # Some moves can't miss
+    if move.accuracy is True or attacker.is_dynamaxed:
+        if verbose:
+            print("Move {0} accuracy: {1}".format(move.id, 1))
+
+        return 1
+
+    accuracy = move.accuracy
+
+    # The moves "thunder" and "hurricane" have different accuracies with respect to the active weather
+    if move.id in ["thunder", "hurricane"]:
+        if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
+            accuracy = 0.5
+        elif weather in [Weather.RAINDANCE, Weather.PRIMORDIALSEA]:
+            accuracy = 1
+
+    # The move "blizzard" has an accuracy of 1 if the weather is hail
+    if move.id == "blizzard" and weather is Weather.HAIL:
+        accuracy = 1
+
+    # One-hit KO moves have their accuracy boosted by the difference between the attacker and defender levels
+    if move.id in ["fissure", "guillotine", "horndrill", "sheercold"]:
+        if defender.level <= attacker.level:
+            accuracy += attacker.level - defender.level
+        else:
+            if verbose:
+                print("Move {0} accuracy: {1}".format(move.id, accuracy))
+
+            return move.accuracy
+
+    if attacker.ability == "hustle" and move.category is MoveCategory.PHYSICAL:
+        accuracy *= 0.8
+
+    # Apply modifiers to attacker's accuracy and defender's evasion
+    accuracy *= compute_stat_modifiers(attacker, "accuracy", weather, terrain)
+    evasion = compute_stat_modifiers(defender, "evasion", weather, terrain)
+
+    # Compute boosts to the previous stats
+    accuracy *= compute_stat_boost(attacker, "accuracy")
+    evasion *= compute_stat_boost(defender, "evasion")
+
+    # Compute move accuracy
+    move_accuracy = accuracy / evasion
+
+    if verbose:
+        print("Move {0} accuracy: {1}".format(move.id, move_accuracy))
+
+    return move_accuracy
