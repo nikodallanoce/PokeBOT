@@ -1,4 +1,4 @@
-from poke_env.environment import Pokemon, Move, Weather, Field, Status
+from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
 from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
@@ -15,7 +15,12 @@ SOUND_BASED_MOVES_IDS = ["boomburst", "bugbuzz", "chatter", "clangingscales", "c
                          "sparklingaura", "supersonic", "uproar"]
 AURA_PULSE_MOVES_IDS = ["aurasphere", "darkpulse", "dragonpulse", "healpulse", "originpulse",
                         "terrainpulse", "waterpulse"]
+PROTECTING_MOVES = ["banefulbunker", "detect", "kingsshield", "matblock", "obstruct", "protect",
+                    "spikyshield", "wideguard"]
 IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze"]
+ENTRY_HAZARDS = {"spikes": SideCondition.SPIKES, "stealhrock": SideCondition.STEALTH_ROCK,
+                 "stickyweb": SideCondition.STICKY_WEB, "toxicspikes": SideCondition.TOXIC_SPIKES}
+ANTI_HAZARDS_MOVES = ["rapidspin", "defog"]
 
 
 def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
@@ -304,7 +309,7 @@ def compute_damage(move: Move,
 
     # Compute the effect of the weather
     weather_multiplier = 1
-    if weather is not None and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
+    if weather and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
             if move_type is PokemonType.FIRE:
                 weather_multiplier = 1.5
@@ -324,7 +329,7 @@ def compute_damage(move: Move,
 
     # Compute the effect of the terrain
     terrain_multiplier = 1
-    if terrain is not None:
+    if terrain:
         if terrain is Field.ELECTRIC_TERRAIN:
             if move_type is PokemonType.ELECTRIC:
                 terrain_multiplier = 1.3
@@ -449,6 +454,9 @@ def compute_move_accuracy(move: Move,
                 print("Move {0} accuracy: {1}".format(move.id, accuracy))
 
             return move.accuracy
+
+    if attacker.ability == "hustle" and move.category is MoveCategory.PHYSICAL:
+        accuracy *= 0.8
 
     # Apply modifiers to attacker's accuracy and defender's evasion
     accuracy *= compute_stat_modifiers(attacker, "accuracy", weather, terrain)
