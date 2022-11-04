@@ -1,4 +1,4 @@
-from poke_env.environment import Pokemon, Battle, Move, MoveCategory, Weather, Field
+from poke_env.environment import Pokemon, Battle, Move, MoveCategory, Weather, Field, Status, SideCondition
 from poke_env.player import Player
 from src.utilities.battle_utilities import compute_damage, outspeed_prob, compute_move_accuracy,\
     PROTECTING_MOVES, ENTRY_HAZARDS, ANTI_HAZARDS_MOVES
@@ -7,6 +7,10 @@ from src.utilities.battle_utilities import compute_damage, outspeed_prob, comput
 class RuleBasedPlayer(Player):
 
     verbose = False
+    best_stats_pokemon = 0
+    current_pokemon = None
+    previous_pokemon = None
+    toxic_turn = 0
 
     @staticmethod
     def __type_advantage(attacker: Pokemon, defender: Pokemon) -> float:
@@ -54,39 +58,86 @@ class RuleBasedPlayer(Player):
         bot_type_adv = self.__type_advantage(bot_pokemon, opponent_pokemon)
         opponent_type_adv = self.__type_advantage(opponent_pokemon, bot_pokemon)
         poke_adv = bot_type_adv - opponent_type_adv
-        move_adv = self.__move_type_advantage(bot_pokemon, opponent_pokemon, bot_type_adv)
-        return poke_adv + move_adv
+        move_adv = self.__move_type_advantage(bot_pokemon, opponent_pokemon, opponent_type_adv)
+        # hp_adv = bot_pokemon.current_hp_fraction - opponent_pokemon.current_hp_fraction
+        return poke_adv + move_adv  # + hp_adv
 
-    @staticmethod
-    def __should_switch(bot_matchup: float, team_matchups: dict) -> bool:
+    def __should_switch(self, bot_pokemon: Pokemon, matchup: float, team_matchups: dict, outspeed_p: float) -> bool:
         max_team_matchup = max(team_matchups.values()) if len(team_matchups) > 0 else -8
+
+        # Do not switch out the pokèmon if it is dynamaxed unless there is a very bad matchup
+        if bot_pokemon.is_dynamaxed:
+            if matchup <= -4:
+                return True
+
+            return False
+
+        # The "toxic" status is one of the worst and gets by each turn, we need to attenuate its effects by switching
+        if bot_pokemon.status is Status.TOX and matchup - self.toxic_turn < -2:
+            return True
+
+        # We can switch out if there are matchups better than the current one
+        if max_team_matchup > matchup:
+            # If one of the defense stat was decreased too much, switch out to not take heavy hits
+            if bot_pokemon.boosts["def"] <= -2 or bot_pokemon.boosts["spd"] <= -2:
+                return True
+
+            # If the attack stat was decreased too much and the pokèmon is a physical attacker, switch out
+            if bot_pokemon.base_stats["atk"] > bot_pokemon.boosts["spa"]:
+                if matchup <= -1.5 or bot_pokemon.boosts["atk"] <= -2:
+                    return True
+
+            # If the special attack stat was decreased too much and the pokèmon is a special attacker, switch out
+            if bot_pokemon.base_stats["spa"] > bot_pokemon.boosts["atk"]:
+                if matchup <= -1.5 or bot_pokemon.boosts["spa"] <= -2:
+                    return True
+
+            # Switch out if the matchup is on the opponent's favor
+            if matchup <= -2:
+                return True
+            elif matchup <= -1 and outspeed_p <= 0.5:
+                return True
+
         return False
 
-    @staticmethod
-    def __should_dynamax(bot_pokemon: Pokemon, bot_team: list, bot_matchup: float, team_matchups: dict) -> bool:
+    def __should_dynamax(self, bot_pokemon: Pokemon, bot_team: list, matchup: float, team_matchups: dict) -> bool:
         max_team_matchup = max(team_matchups.values()) if len(team_matchups) > 0 else -8
-        if len(bot_team) == 0:
-            dynamax = True
-        elif bot_pokemon.current_hp_fraction == 1:
-            if len([pokemon for pokemon in bot_team if pokemon.current_hp_fraction == 1]) == 0:
-                dynamax = True
-            else:
-                if bot_matchup >= max_team_matchup and bot_matchup > 2:
-                    dynamax = True
-                else:
-                    dynamax = False
-        else:
-            if bot_matchup >= max_team_matchup and bot_matchup > 4:
-                dynamax = True
-            else:
-                dynamax = False
 
-        return dynamax
+        # If the pokèmon is the last one alive, use the dynamax
+        if len(bot_team) == 0:
+            return True
+
+        # If the current pokèmon is the best one in terms of base stats and the matchup is favorable, then dynamax
+        if sum(bot_pokemon.base_stats.values()) == self.best_stats_pokemon and matchup >= 1:
+            return True
+
+        if bot_pokemon.current_hp_fraction == 1:
+            # If the current pokèmon is the last one at full hp, use dynamax on it
+            if len([pokemon for pokemon in bot_team if pokemon.current_hp_fraction == 1]) == 0:
+                return True
+            else:
+                # If the current matchup is the best one, and it's favourable, then dynamax
+                if matchup >= max_team_matchup and matchup > 2:
+                    return True
+
+        if matchup >= max_team_matchup and matchup > 2:
+            return True
+
+        return False
 
     def choose_move(self, battle: Battle):
         # Retrieve both active pokèmon
         bot_pokemon: Pokemon = battle.active_pokemon
         opponent_pokemon: Pokemon = battle.opponent_active_pokemon
+
+        if self.best_stats_pokemon == 0:
+            self.best_stats_pokemon = max([sum(pokemon.base_stats.values()) for pokemon in battle.team.values()])
+
+        self.current_pokemon = bot_pokemon
+        if self.current_pokemon is not self.previous_pokemon:
+            self.toxic_turn = 0
+        elif bot_pokemon.status is Status.TOX:
+            self.toxic_turn += 1
 
         # Retrieve weather and terrain
         weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
@@ -102,9 +153,15 @@ class RuleBasedPlayer(Player):
         for pokemon in bot_team:
             team_matchups.update({pokemon: self.__matchup_on_types(pokemon, opponent_pokemon)})
 
+        # print("Bot pokemon {0} types: {1}, matchup: {2}".format(bot_pokemon.species, bot_pokemon.types, bot_matchup))
+        # print("Opponent pokemon {0} types: {1}".format(opponent_pokemon.species, opponent_pokemon.types))
+        # print("{0}\n".format(team_matchups))
+
         # Switch out if there are available switches and the bot gains in terms of matchup by doing so
-        if battle.available_switches and self.__should_switch(bot_matchup, team_matchups):
+        outpseed_p = outspeed_prob(bot_pokemon, opponent_pokemon, weather, terrain)
+        if battle.available_switches and self.__should_switch(bot_pokemon, bot_matchup, team_matchups, outpseed_p):
             switch = max(team_matchups, key=lambda pokemon: team_matchups[pokemon])
+            self.previous_pokemon = bot_pokemon
             return self.create_order(switch)
 
         # Choose one available move
@@ -112,24 +169,37 @@ class RuleBasedPlayer(Player):
             bot_moves = dict()
             for move in battle.available_moves:
                 # If we don't know any move of the opponent, the matchup is slightly against, then use a protecting move
-                if move.id in PROTECTING_MOVES and len(opponent_pokemon.moves) == 0 and bot_matchup < -1:
+                if move.id in PROTECTING_MOVES and len(opponent_pokemon.moves) == 0 and bot_matchup <= -0.5:
                     return self.create_order(move)
 
                 # We can use a move that puts an entry hazard if it isn't already present
                 opponent_team_size = 6 - len([pokemon for pokemon in battle.opponent_team.values() if pokemon.fainted])
                 if move.id in ENTRY_HAZARDS and opponent_team_size >= 4\
-                        and ENTRY_HAZARDS[move.id] not in battle.opponent_side_conditions:
+                        and ENTRY_HAZARDS[move.id] not in battle.opponent_side_conditions and bot_matchup >= 0:
                     return self.create_order(move)
 
                 # We can remove any entry hazard on our side if we have enough pokèmon remaining on our team
                 if move.id in ANTI_HAZARDS_MOVES and len(bot_team) >= 1 and len(battle.side_conditions) > 0:
                     return self.create_order(move)
 
-                # if len(move.boosts) > 0 and bot_matchup >= 1:
-                    # return self.create_order(move)
+                # We can boost our stats if the matchup is in our favor
+                stat_boost = None if not move.boosts else list(move.boosts.keys())
+                if stat_boost and bot_matchup >= 1 and sum(bot_pokemon.boosts[stat] for stat in stat_boost) == 0:
+                    return self.create_order(move)
 
                 # In any other case, compute the damage and accuracy of the move
                 damage = compute_damage(move, bot_pokemon, opponent_pokemon, weather, terrain, True, self.verbose)
+
+                # Some side conditions halve the move's damage
+                opponent_conditions = list(battle.opponent_side_conditions.keys())
+                if [SideCondition.REFLECT, SideCondition.AURORA_VEIL] in opponent_conditions \
+                        and move.category is MoveCategory.PHYSICAL:
+                    damage *= 0.5
+
+                if [SideCondition.LIGHT_SCREEN, SideCondition.AURORA_VEIL] in opponent_conditions \
+                        and move.category is MoveCategory.SPECIAL:
+                    damage *= 0.5
+
                 accuracy = compute_move_accuracy(move, bot_pokemon, opponent_pokemon, weather, terrain, self.verbose)
                 bot_moves.update({move: {"damage": damage, "accuracy": accuracy}})
 
@@ -148,7 +218,11 @@ class RuleBasedPlayer(Player):
 
             return self.create_order(best_move, dynamax=dynamax)
         elif battle.available_switches:
+            for pokemon in bot_team:
+                team_matchups.update({pokemon: self.__matchup_on_types(pokemon, opponent_pokemon)})
+
             switch = max(team_matchups, key=lambda pokemon: team_matchups[pokemon])
+            self.previous_pokemon = bot_pokemon
             return self.create_order(switch)
 
         return self.choose_random_move(battle)
