@@ -1,7 +1,7 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
-from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
+from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
 
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
                       "firepunch", "focuspunch", "hammerarm", "icehammer", "icepunch", "machpunch",
