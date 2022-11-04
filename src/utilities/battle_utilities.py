@@ -262,14 +262,16 @@ def compute_damage(move: Move,
 
         attacker_stat["stat"] = "spa"
 
+    att_stat = attacker_stat["stat"]
+    def_stat = defender_stat["stat"]
     if is_bot:
-        attacker_stat["value"] = attacker.stats[attacker_stat["stat"]]
-        defender_stat["value"] = defender.base_stats[defender_stat["stat"]]
-        defender_stat["value"] = estimate_stat(defender, defender_stat["stat"])
+        attacker_stat["value"] = attacker.stats[att_stat]
+        defender_stat["value"] = defender.base_stats[def_stat]
+        defender_stat["value"] = estimate_stat(defender, def_stat)
     else:
-        attacker_stat["value"] = attacker.base_stats[attacker_stat["stat"]]
-        attacker_stat["value"] = estimate_stat(attacker, attacker_stat["stat"])
-        defender_stat["value"] = defender.stats[defender_stat["stat"]]
+        attacker_stat["value"] = attacker.base_stats[att_stat]
+        attacker_stat["value"] = estimate_stat(attacker, att_stat)
+        defender_stat["value"] = defender.stats[def_stat]
 
     # Compute stat modifiers
     attacker_stat["value"] *= compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain)

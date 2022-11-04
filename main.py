@@ -2,7 +2,8 @@ from poke_env import PlayerConfiguration, ShowdownServerConfiguration
 import asyncio
 from poke_env.player import cross_evaluate, baselines
 from tabulate import tabulate
-from player import BestDamagePlayer, MaxBasePowerPlayer
+from src.players.baseline_player import BestDamagePlayer
+from src.players.rulebased_player import RuleBasedPlayer
 import sys
 import argparse
 
@@ -19,14 +20,14 @@ async def run_bot_local():
     first_player = BestDamagePlayer(player_configuration=PlayerConfiguration("BestDamage", None),
                                     max_concurrent_battles=10)
     first_player.can_switch = True
-    second_player = BestDamagePlayer(player_configuration=PlayerConfiguration("BestDamageNoSwitch", None),
-                                     max_concurrent_battles=10)
     baseline = baselines.SimpleHeuristicsPlayer(player_configuration=PlayerConfiguration("Baseline", None),
                                                 max_concurrent_battles=10)
-    players = [first_player, baseline]
+
+    rule_based = RuleBasedPlayer(player_configuration=PlayerConfiguration("RuleBased", None), max_concurrent_battles=10)
+    players = [first_player, baseline, rule_based]
 
     # Let them challenge each other
-    cross_evaluation = await cross_evaluate(players, n_challenges=1)
+    cross_evaluation = await cross_evaluate(players, n_challenges=100)
 
     # Display the results
     table = [["-"] + [p.username for p in players]]
@@ -43,9 +44,10 @@ async def run_bot_online():
 
     # Set up the bot
     player_config = PlayerConfiguration(bot_username, bot_password)
-    player = BestDamagePlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
+    # player = BestDamagePlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
+    player = RuleBasedPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     player.verbose = True
-    player.can_switch = True
+    # player.can_switch = True
 
     # Accept all challenges regardless the user
     await player.accept_challenges(None, 1)
@@ -54,7 +56,7 @@ async def run_bot_online():
 if __name__ == '__main__':
     remote_server = True
     run_bot = asyncio.new_event_loop()
-    if remote_server:
+    if not remote_server:
         run_bot.run_until_complete(run_bot_online())
     else:
         run_bot.run_until_complete(run_bot_local())
