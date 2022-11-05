@@ -1,7 +1,7 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
-from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
+from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
 
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
                       "firepunch", "focuspunch", "hammerarm", "icehammer", "icepunch", "machpunch",
@@ -15,6 +15,7 @@ SOUND_BASED_MOVES_IDS = ["boomburst", "bugbuzz", "chatter", "clangingscales", "c
                          "sparklingaura", "supersonic", "uproar"]
 AURA_PULSE_MOVES_IDS = ["aurasphere", "darkpulse", "dragonpulse", "healpulse", "originpulse",
                         "terrainpulse", "waterpulse"]
+PERFECT_CRIT_RATE_MOVES_IDS = ["frostbreath", "stormthrow", "surgingstrikes", "wickedblow", "zippyzap"]
 PROTECTING_MOVES = ["banefulbunker", "detect", "kingsshield", "matblock", "obstruct", "protect",
                     "spikyshield", "wideguard"]
 IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze"]
@@ -202,6 +203,9 @@ def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pok
     if attacker.ability == "neuroforce" and defender.damage_multiplier(move) >= 2:
         damage_modifier *= 1.25
 
+    if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] and defender.effects:
+        damage_modifier *= 1.5
+
     # Pokèmon that held the life orb item deal 1.1 damage
     if attacker.item == "lifeorb":
         damage_modifier *= 1.299
@@ -262,14 +266,16 @@ def compute_damage(move: Move,
 
         attacker_stat["stat"] = "spa"
 
+    att_stat = attacker_stat["stat"]
+    def_stat = defender_stat["stat"]
     if is_bot:
-        attacker_stat["value"] = attacker.stats[attacker_stat["stat"]]
-        defender_stat["value"] = defender.base_stats[defender_stat["stat"]]
-        defender_stat["value"] = estimate_stat(defender, defender_stat["stat"])
+        attacker_stat["value"] = attacker.stats[att_stat]
+        defender_stat["value"] = defender.base_stats[def_stat]
+        defender_stat["value"] = estimate_stat(defender, def_stat)
     else:
-        attacker_stat["value"] = attacker.base_stats[attacker_stat["stat"]]
-        attacker_stat["value"] = estimate_stat(attacker, attacker_stat["stat"])
-        defender_stat["value"] = defender.stats[defender_stat["stat"]]
+        attacker_stat["value"] = attacker.base_stats[att_stat]
+        attacker_stat["value"] = estimate_stat(attacker, att_stat)
+        defender_stat["value"] = defender.stats[def_stat]
 
     # Compute stat modifiers
     attacker_stat["value"] *= compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain)
@@ -295,11 +301,12 @@ def compute_damage(move: Move,
     move_type = base_power_multiplier["move_type"]
 
     # Change the move type by effect of the attacker ability and held item
-    if attacker.ability == "multitype" and move.id == "judgement" and attacker.item[-5:] == "plate":
-        move_type = PokemonType.from_name(attacker.item[:-5])
+    if attacker.ability in ["multitype", "rkssystem"] and attacker.item:
+        if attacker.ability == "multitype" and move.id == "judgement" and attacker.item[-5:] == "plate":
+            move_type = PokemonType.from_name(attacker.item[:-5])
 
-    if attacker.ability == "rkssystem" and move.id == "multiattack" and attacker.item[-6:] == "memory":
-        move_type = PokemonType.from_name(attacker.item[:-6])
+        if attacker.ability == "rkssystem" and move.id == "multiattack" and attacker.item[-6:] == "memory":
+            move_type = PokemonType.from_name(attacker.item[:-6])
 
     if verbose:
         print("Base power: {0}, Power: {1}, Type: {2}".format(move.base_power, power, move_type))
@@ -372,6 +379,13 @@ def compute_damage(move: Move,
     # Compute the effect of various abilities and items
     other_damage_multipliers = __compute_other_damage_modifier(move, attacker, defender, weather)
     damage = int(damage * other_damage_multipliers)
+
+    # Some moves have a perfect critical hit rate
+    if move.id in PERFECT_CRIT_RATE_MOVES_IDS and defender.ability not in ["battlearmor", "shellarmour"]:
+        damage *= 1.5
+
+    # There are moves that hit more than time
+    damage *= int(move.expected_hits)
 
     # The move false swipe will never kill the pokèmon
     if move.id == "falseswipe" and defender.current_hp <= damage:

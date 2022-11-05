@@ -161,6 +161,9 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrain: 
     if pokemon.item == "heavyball":
         spe_modifier *= 0.5
 
+    if pokemon.status is Status.PAR:
+        spe_modifier *= 0.5
+
     return spe_modifier
 
 
