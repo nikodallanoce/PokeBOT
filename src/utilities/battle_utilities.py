@@ -189,7 +189,7 @@ def __compute_other_damage_modifier(move: Move,
     if defender.ability == "wonderguard" and defender.damage_multiplier(move) < 2:
         return 0
 
-    if "soundproof" in defender.possible_abilities and move.id in SOUND_BASED_MOVES_IDS:
+    if move.id in SOUND_BASED_MOVES_IDS and "soundproof" in defender.possible_abilities:
         return 0
 
     if defender.ability == "punkrock" and move.id in SOUND_BASED_MOVES_IDS:
@@ -341,7 +341,8 @@ def compute_damage(move: Move,
 
     # Compute the effect of the weather
     weather_multiplier = 1
-    if weather and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
+    if weather and not ("airlock" in [attacker.ability, defender.ability]
+                        or "cloudnine" in [attacker.ability, defender.ability]):
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
             if move_type is PokemonType.FIRE:
                 weather_multiplier = 1.5
