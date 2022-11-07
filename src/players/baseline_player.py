@@ -1,16 +1,9 @@
 from poke_env.environment import Move, Pokemon
 from poke_env.player import Player
-from battle_utilities import compute_damage, outspeed_prob
-
-
-class RuleBasedPlayer(Player):
-
-    def choose_move(self, battle):
-        return None
+from src.utilities.battle_utilities import compute_damage, outspeed_prob
 
 
 class BestDamagePlayer(Player):
-
     verbose = False
     can_switch = False
 
@@ -31,18 +24,12 @@ class BestDamagePlayer(Player):
                                                                   True, self.verbose))
             if self.verbose:
                 print("Outspeed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon,
-                                                                       weather, terrain, self.verbose)))
+                                                                      weather, terrain, self.verbose)))
                 print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
 
             gimmick = False
             if battle.can_dynamax:
-                if len(battle.available_switches) == 0:
-                    gimmick = True
-                elif bot_pokemon.current_hp_fraction == 1:
-                    gimmick = True
-                    for pokemon in battle.available_switches:
-                        if pokemon.current_hp_fraction == 1:
-                            gimmick = False
+                gimmick = True
 
             return self.create_order(best_move, dynamax=gimmick)
         else:

@@ -51,6 +51,12 @@ def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     if pokemon.ability == "guts" and pokemon.status in STATUS_CONDITIONS:
         atk_modifier *= 1.5
 
+    if pokemon.ability == "hustle":
+        atk_modifier *= 1.5
+
+    if pokemon.ability == "gorillatactics" and not pokemon.is_dynamaxed:
+        atk_modifier *= 1.5
+
     if pokemon.ability in ["hugepower", "purepower"]:
         atk_modifier *= 2
 
@@ -155,23 +161,23 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrain: 
     if pokemon.item == "heavyball":
         spe_modifier *= 0.5
 
+    if pokemon.status is Status.PAR:
+        spe_modifier *= 0.5
+
     return spe_modifier
 
 
 def __compute_accuracy_modifiers(pokemon: Pokemon) -> float:
     accuracy_modifier = 1
 
+    if pokemon.ability == "compoundeyes":
+        accuracy_modifier *= 1.3
+
     if pokemon.item == "widelens":
         accuracy_modifier *= 1.1
 
     if pokemon.item == "victorystar":
         accuracy_modifier *= 1.1
-
-    if pokemon.item == "compoundeyes":
-        accuracy_modifier *= 1.3
-
-    if pokemon.item == "hustle":
-        accuracy_modifier *= 0.8
 
     return accuracy_modifier
 
@@ -215,3 +221,23 @@ def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None,
             return __compute_evasion_modifiers(pokemon, weather)
 
     return 1
+
+
+def compute_stat(pokemon: Pokemon,
+                 stat: str,
+                 weather: Weather = None,
+                 terrain: Field = None,
+                 is_bot: bool = False,
+                 ivs: int = 31,
+                 evs: int = 21,
+                 nature: str = "Neutral") -> int:
+    if is_bot:
+        stat_value = pokemon.stats[stat]
+    else:
+        stat_value = estimate_stat(pokemon, stat, ivs, evs, nature)
+
+    modifiers = compute_stat_modifiers(pokemon, stat, weather, terrain)
+    boost = compute_stat_boost(pokemon, stat)
+    stat_value *= modifiers
+    stat_value *= boost
+    return stat_value

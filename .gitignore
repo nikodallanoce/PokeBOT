@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+main.py
 
 # C extensions
 *.so
@@ -129,3 +130,5 @@ dmypy.json
 .pyre/
 
 .idea/
+
+main.py
