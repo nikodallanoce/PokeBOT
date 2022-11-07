@@ -1,7 +1,7 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
-from stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
+from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
 
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
                       "firepunch", "focuspunch", "hammerarm", "icehammer", "icepunch", "machpunch",
@@ -15,6 +15,7 @@ SOUND_BASED_MOVES_IDS = ["boomburst", "bugbuzz", "chatter", "clangingscales", "c
                          "sparklingaura", "supersonic", "uproar"]
 AURA_PULSE_MOVES_IDS = ["aurasphere", "darkpulse", "dragonpulse", "healpulse", "originpulse",
                         "terrainpulse", "waterpulse"]
+PERFECT_CRIT_RATE_MOVES_IDS = ["frostbreath", "stormthrow", "surgingstrikes", "wickedblow", "zippyzap"]
 PROTECTING_MOVES = ["banefulbunker", "detect", "kingsshield", "matblock", "obstruct", "protect",
                     "spikyshield", "wideguard"]
 IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze"]
@@ -24,8 +25,8 @@ ANTI_HAZARDS_MOVES = ["rapidspin", "defog"]
 
 
 def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
-    move_type = move.type
     base_power_multiplier = 1
+    move_type = move.type
 
     # The power of the move "facade" is double if the user has a status condition
     if move.id == "facade" and attacker.status in STATUS_CONDITIONS:
@@ -85,6 +86,9 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     if attacker.ability == "galvanize" and move_type is PokemonType.NORMAL:
         move_type = PokemonType.ELECTRIC
         base_power_multiplier *= 1.2
+
+    if attacker.ability == "waterbubble" and move_type is PokemonType.WATER:
+        base_power_multiplier *= 2
 
     # The "punk rock" ability boosts the power of sound-based moves
     if attacker.ability == "punkrock" and move.id in SOUND_BASED_MOVES_IDS:
@@ -150,21 +154,27 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     return {"power_multiplier": base_power_multiplier, "move_type": move_type}
 
 
-def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pokemon, weather: Weather) -> float:
+def __compute_other_damage_modifier(move: Move,
+                                    move_type: PokemonType,
+                                    attacker: Pokemon,
+                                    defender: Pokemon,
+                                    weather: Weather) -> float:
     damage_modifier = 1
-    move_type = move.type
 
     # Pokèmon with the water absorb ability suffer no damage from water type moves
-    if move_type is PokemonType.WATER and "waterabsorb" in defender.possible_abilities:
+    if move_type is PokemonType.WATER and ("waterabsorb" in defender.possible_abilities
+                                           or "dryskin" in defender.possible_abilities
+                                           or "stormdrain" in defender.possible_abilities):
         return 0
 
     # Pokèmon with the water absorb ability suffer no damage from water type moves
-    if move_type is PokemonType.GROUND and "levitate" in defender.possible_abilities:
+    if move_type is PokemonType.GROUND and "levitate" in defender.possible_abilities and defender.item != "ironball":
         return 0
 
     # Pokèmon with the volt absorb ability suffer no damage from electric type moves
     if move_type is PokemonType.ELECTRIC and ("voltabsorb" in defender.possible_abilities
-                                              or "motordrive" in defender.possible_abilities):
+                                              or "motordrive" in defender.possible_abilities
+                                              or "lightningrod" in defender.possible_abilities):
         return 0
 
     # Pokèmon with the flash fire ability suffer no damage from fire type moves
@@ -178,6 +188,12 @@ def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pok
     # Pokèmon with the wonder guard ability can only take damage from super-effective moves
     if defender.ability == "wonderguard" and defender.damage_multiplier(move) < 2:
         return 0
+
+    if move.id in SOUND_BASED_MOVES_IDS and "soundproof" in defender.possible_abilities:
+        return 0
+
+    if defender.ability == "punkrock" and move.id in SOUND_BASED_MOVES_IDS:
+        damage_modifier *= 0.5
 
     # Pokèmon with the following abilities receive 0.75 less damage from super-effective moves
     if defender.ability in ["filter", "solidrock", "prismarmor"] and defender.damage_multiplier(move) >= 2:
@@ -201,6 +217,15 @@ def __compute_other_damage_modifier(move: Move, attacker: Pokemon, defender: Pok
     # Pokèmon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
     if attacker.ability == "neuroforce" and defender.damage_multiplier(move) >= 2:
         damage_modifier *= 1.25
+
+    if defender.ability == "waterbubble" and move_type is PokemonType.FIRE:
+        damage_modifier *= 0.5
+
+    if defender.ability == "fluffy" and move_type is PokemonType.FIRE:
+        damage_modifier *= 2
+
+    if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] and defender.effects:
+        damage_modifier *= 1.5
 
     # Pokèmon that held the life orb item deal 1.1 damage
     if attacker.item == "lifeorb":
@@ -244,6 +269,22 @@ def compute_damage(move: Move,
     # Compute the effect of the attacker level
     level_multiplier = 2 * attacker.level / 5 + 2
 
+    # Compute the move's power
+    base_power_multiplier = __compute_base_power_multipliers(move, attacker, defender)
+    power = int(move.base_power * base_power_multiplier["power_multiplier"])
+    move_type = base_power_multiplier["move_type"]
+
+    # Change the move type by effect of the attacker ability and held item
+    if attacker.ability in ["multitype", "rkssystem"] and attacker.item:
+        if attacker.ability == "multitype" and move.id == "judgement" and attacker.item[-5:] == "plate":
+            move_type = PokemonType.from_name(attacker.item[:-5])
+
+        if attacker.ability == "rkssystem" and move.id == "multiattack" and attacker.item[-6:] == "memory":
+            move_type = PokemonType.from_name(attacker.item[:-6])
+
+    if verbose:
+        print("Base power: {0}, Power: {1}, Type: {2}".format(move.base_power, power, move_type))
+
     # Compute the ratio between the attacker atk/spa stat and the defender def/spd stat
     attacker_stat = {"stat": None, "value": 0}
     defender_stat = {"stat": None, "value": 0}
@@ -262,17 +303,23 @@ def compute_damage(move: Move,
 
         attacker_stat["stat"] = "spa"
 
+    att_stat = attacker_stat["stat"]
+    def_stat = defender_stat["stat"]
     if is_bot:
-        attacker_stat["value"] = attacker.stats[attacker_stat["stat"]]
-        defender_stat["value"] = defender.base_stats[defender_stat["stat"]]
-        defender_stat["value"] = estimate_stat(defender, defender_stat["stat"])
+        attacker_stat["value"] = attacker.stats[att_stat]
+        defender_stat["value"] = defender.base_stats[def_stat]
+        defender_stat["value"] = estimate_stat(defender, def_stat)
     else:
-        attacker_stat["value"] = attacker.base_stats[attacker_stat["stat"]]
-        attacker_stat["value"] = estimate_stat(attacker, attacker_stat["stat"])
-        defender_stat["value"] = defender.stats[defender_stat["stat"]]
+        attacker_stat["value"] = attacker.base_stats[att_stat]
+        attacker_stat["value"] = estimate_stat(attacker, att_stat)
+        defender_stat["value"] = defender.stats[def_stat]
 
     # Compute stat modifiers
     attacker_stat["value"] *= compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain)
+    if attacker_stat["stat"] in ["atk", "spa"] and defender.ability == "thickfat"\
+            and move_type in [PokemonType.FIRE, PokemonType.ICE]:
+        attacker_stat["value"] *= 0.5
+
     defender_stat["value"] *= compute_stat_modifiers(defender, defender_stat["stat"], weather, terrain)
 
     if defender.ability != "unaware":
@@ -289,27 +336,13 @@ def compute_damage(move: Move,
         print("Defender: {0}, {1} {2}: {3}".format(defender.species, move.category.name,
                                                    defender_stat["stat"], int(defender_stat["value"])))
 
-    # Compute the move's power
-    base_power_multiplier = __compute_base_power_multipliers(move, attacker, defender)
-    power = int(move.base_power * base_power_multiplier["power_multiplier"])
-    move_type = base_power_multiplier["move_type"]
-
-    # Change the move type by effect of the attacker ability and held item
-    if attacker.ability == "multitype" and move.id == "judgement" and attacker.item[-5:] == "plate":
-        move_type = PokemonType.from_name(attacker.item[:-5])
-
-    if attacker.ability == "rkssystem" and move.id == "multiattack" and attacker.item[-6:] == "memory":
-        move_type = PokemonType.from_name(attacker.item[:-6])
-
-    if verbose:
-        print("Base power: {0}, Power: {1}, Type: {2}".format(move.base_power, power, move_type))
-
     # Compute the base damage before taking into account any modifier
     damage = level_multiplier * power * ratio_attack_defense / 50 + 2
 
     # Compute the effect of the weather
     weather_multiplier = 1
-    if weather and not ["airlock", "cloudnine"] in [attacker.ability, defender.ability]:
+    if weather and not ("airlock" in [attacker.ability, defender.ability]
+                        or "cloudnine" in [attacker.ability, defender.ability]):
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
             if move_type is PokemonType.FIRE:
                 weather_multiplier = 1.5
@@ -370,8 +403,15 @@ def compute_damage(move: Move,
     damage *= type_multiplier
 
     # Compute the effect of various abilities and items
-    other_damage_multipliers = __compute_other_damage_modifier(move, attacker, defender, weather)
+    other_damage_multipliers = __compute_other_damage_modifier(move, move_type, attacker, defender, weather)
     damage = int(damage * other_damage_multipliers)
+
+    # Some moves have a perfect critical hit rate
+    if move.id in PERFECT_CRIT_RATE_MOVES_IDS and defender.ability not in ["battlearmor", "shellarmour"]:
+        damage *= 1.5
+
+    # There are moves that hit more than time
+    damage *= int(move.expected_hits)
 
     # The move false swipe will never kill the pokèmon
     if move.id == "falseswipe" and defender.current_hp <= damage:
