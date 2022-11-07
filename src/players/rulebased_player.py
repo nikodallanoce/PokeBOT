@@ -130,9 +130,14 @@ class RuleBasedPlayer(Player):
         bot_pokemon: Pokemon = battle.active_pokemon
         opponent_pokemon: Pokemon = battle.opponent_active_pokemon
 
+        # Retrieve the conditions on the opponent's side
+        opponent_conditions = list(battle.opponent_side_conditions.keys())
+
+        # Compute the best base stats, this is useful for dynamax
         if self.best_stats_pokemon == 0:
             self.best_stats_pokemon = max([sum(pokemon.base_stats.values()) for pokemon in battle.team.values()])
 
+        # Deal with the effect of toxic
         self.current_pokemon = bot_pokemon
         if self.current_pokemon is not self.previous_pokemon:
             self.toxic_turn = 0
@@ -153,10 +158,6 @@ class RuleBasedPlayer(Player):
         for pokemon in bot_team:
             team_matchups.update({pokemon: self.__matchup_on_types(pokemon, opponent_pokemon)})
 
-        # print("Bot pokemon {0} types: {1}, matchup: {2}".format(bot_pokemon.species, bot_pokemon.types, bot_matchup))
-        # print("Opponent pokemon {0} types: {1}".format(opponent_pokemon.species, opponent_pokemon.types))
-        # print("{0}\n".format(team_matchups))
-
         # Switch out if there are available switches and the bot gains in terms of matchup by doing so
         outpseed_p = outspeed_prob(bot_pokemon, opponent_pokemon, weather, terrain)
         if battle.available_switches and self.__should_switch(bot_pokemon, bot_matchup, team_matchups, outpseed_p):
@@ -175,7 +176,7 @@ class RuleBasedPlayer(Player):
                 # We can use a move that puts an entry hazard if it isn't already present
                 opponent_team_size = 6 - len([pokemon for pokemon in battle.opponent_team.values() if pokemon.fainted])
                 if move.id in ENTRY_HAZARDS and opponent_team_size >= 4\
-                        and ENTRY_HAZARDS[move.id] not in battle.opponent_side_conditions and bot_matchup >= 0:
+                        and ENTRY_HAZARDS[move.id] not in opponent_conditions and bot_matchup >= 0:
                     return self.create_order(move)
 
                 # We can remove any entry hazard on our side if we have enough pokèmon remaining on our team
@@ -190,16 +191,17 @@ class RuleBasedPlayer(Player):
                 # In any other case, compute the damage and accuracy of the move
                 damage = compute_damage(move, bot_pokemon, opponent_pokemon, weather, terrain, True, self.verbose)
 
-                # Some side conditions halve the move's damage
-                opponent_conditions = list(battle.opponent_side_conditions.keys())
-                if [SideCondition.REFLECT, SideCondition.AURORA_VEIL] in opponent_conditions \
-                        and move.category is MoveCategory.PHYSICAL:
+                # Some side conditions on the opponent's side halve the move's damage
+                if SideCondition.REFLECT in opponent_conditions and move.category is MoveCategory.PHYSICAL:
                     damage *= 0.5
 
-                if [SideCondition.LIGHT_SCREEN, SideCondition.AURORA_VEIL] in opponent_conditions \
-                        and move.category is MoveCategory.SPECIAL:
+                if SideCondition.AURORA_VEIL in opponent_conditions:
                     damage *= 0.5
 
+                if SideCondition.LIGHT_SCREEN in opponent_conditions and move.category is MoveCategory.SPECIAL:
+                    damage *= 0.5
+
+                # Compute the accuracy of the move and save it
                 accuracy = compute_move_accuracy(move, bot_pokemon, opponent_pokemon, weather, terrain, self.verbose)
                 bot_moves.update({move: {"damage": damage, "accuracy": accuracy}})
 
@@ -218,9 +220,11 @@ class RuleBasedPlayer(Player):
 
             return self.create_order(best_move, dynamax=dynamax)
         elif battle.available_switches:
+            # Update the matchup for each remaining pokèmon in the team
             for pokemon in bot_team:
                 team_matchups.update({pokemon: self.__matchup_on_types(pokemon, opponent_pokemon)})
 
+            # Choose the new active pokèmon
             switch = max(team_matchups, key=lambda pokemon: team_matchups[pokemon])
             self.previous_pokemon = bot_pokemon
             return self.create_order(switch)
