@@ -235,6 +235,9 @@ def __compute_other_damage_modifier(move: Move,
     if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] and defender.effects:
         damage_modifier *= 1.5
 
+    if move.id in ["behemothblade", "dynamaxcannon"] and defender.is_dynamaxed:
+        damage_modifier *= 2
+
     # Pokèmon that held the life orb item deal 1.1 damage
     if attacker.item == "lifeorb":
         damage_modifier *= 1.299
