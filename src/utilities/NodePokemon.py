@@ -50,19 +50,19 @@ class NodePokemon:
         self.moves = moves
 
     def clone_all(self):
-        return NodePokemon(self.pokemon, self.current_hp, self.current_stats, self.status)
+        return NodePokemon(self.pokemon, self.current_hp, self.current_stats.copy(), self.status, self.moves.copy())
 
     def clone(self, current_hp: int = None, current_stats: dict[str, int] = None, status: Status = None,
               moves: list[Move] = None):
         if current_hp is None:
             current_hp = self.current_hp
         if current_stats is None:
-            current_stats = self.current_stats
+            current_stats = self.current_stats.copy()
         if status is None:
             status = self.status
         if moves is None:
-            moves = self.moves
-        return NodePokemon(self.pokemon, current_hp, current_stats, status)
+            moves = self.moves.copy()
+        return NodePokemon(self.pokemon, current_hp, current_stats, status, moves)
 
     def enrich_moves(self, known_moves: list[Move]) -> list[Move]:
         moves_added: list[Move] = []

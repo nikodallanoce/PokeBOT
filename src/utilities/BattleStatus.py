@@ -56,6 +56,6 @@ class BattleStatus:
                                     is_my_turn)
             updated_hp = self.opp_poke.current_hp - damage
             act_poke = self.act_poke.clone(current_hp=updated_hp)
-            # self.score = self.compute_score(updated_hp, self.opp_poke_hp)
+
             return BattleStatus(act_poke, self.opp_poke, self.avail_moves.copy(), self.avail_switches,
                                 self.weather, self.terrain, self, move)
