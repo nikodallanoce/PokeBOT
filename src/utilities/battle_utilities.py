@@ -131,14 +131,6 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     if attacker.ability == "flareboost" and move.category is MoveCategory.SPECIAL and attacker.status in [Status.BRN]:
         base_power_multiplier *= 1.5
 
-    # Pokèmon with the rivalry ability deal 1.25 more damage to pokèmon of the same gender,
-    # while dealing 0.75 less damage to the ones from the opposite gender
-    if attacker.ability == "rivalry" and PokemonGender.NEUTRAL not in [attacker.gender, defender.gender]:
-        if attacker.gender == defender.gender:
-            base_power_multiplier *= 1.25
-        else:
-            base_power_multiplier *= 0.75
-
     # The "dragon's maw" ability boosts the power of dragon-type moves
     if attacker.ability == "dragonsmaw" and move_type is PokemonType.DRAGON:
         base_power_multiplier *= 1.5
@@ -222,6 +214,14 @@ def __compute_other_damage_modifier(move: Move,
             else:
                 damage_modifier *= 1.25
 
+    # Pokèmon with the rivalry ability deal 1.25 more damage to pokèmon of the same gender,
+    # while dealing 0.75 less damage to the ones from the opposite gender
+    if attacker.ability == "rivalry" and PokemonGender.NEUTRAL not in [attacker.gender, defender.gender]:
+        if attacker.gender == defender.gender:
+            damage_modifier *= 1.25
+        else:
+            damage_modifier *= 0.75
+
     # Pokèmon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
     if attacker.ability == "neuroforce" and defender.damage_multiplier(move) >= 2:
         damage_modifier *= 1.25
@@ -235,7 +235,7 @@ def __compute_other_damage_modifier(move: Move,
     if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] and defender.effects:
         damage_modifier *= 1.5
 
-    if move.id in ["behemothblade", "dynamaxcannon"] and defender.is_dynamaxed:
+    if move.id in ["behemothblade", "behemothbash", "dynamaxcannon"] and defender.is_dynamaxed:
         damage_modifier *= 2
 
     # Pokèmon that held the life orb item deal 1.1 damage
