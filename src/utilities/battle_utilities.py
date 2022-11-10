@@ -1,4 +1,4 @@
-from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender
+from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender, Effect, Battle
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
 from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
@@ -24,7 +24,7 @@ ENTRY_HAZARDS = {"spikes": SideCondition.SPIKES, "stealhrock": SideCondition.STE
 ANTI_HAZARDS_MOVES = ["rapidspin", "defog"]
 
 
-def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
+def __compute_base_power_modifiers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
     base_power_multiplier = 1
     move_type = move.type
 
@@ -168,7 +168,8 @@ def __compute_other_damage_modifier(move: Move,
         return 0
 
     # Pokèmon with the water absorb ability suffer no damage from water type moves
-    if move_type is PokemonType.GROUND and "levitate" in defender.possible_abilities and defender.item != "ironball":
+    if move_type is PokemonType.GROUND and defender.item != "ironball" and\
+            ("levitate" in defender.possible_abilities or Effect.MAGNET_RISE in defender.effects):
         return 0
 
     # Pokèmon with the volt absorb ability suffer no damage from electric type moves
@@ -281,7 +282,7 @@ def compute_damage(move: Move,
     level_multiplier = 2 * attacker.level / 5 + 2
 
     # Compute the move's power
-    base_power_multiplier = __compute_base_power_multipliers(move, attacker, defender)
+    base_power_multiplier = __compute_base_power_modifiers(move, attacker, defender)
     power = int(move.base_power * base_power_multiplier["power_multiplier"])
     move_type = base_power_multiplier["move_type"]
 
@@ -414,8 +415,8 @@ def compute_damage(move: Move,
     damage *= type_multiplier
 
     # Compute the effect of various abilities and items
-    other_damage_multipliers = __compute_other_damage_modifier(move, move_type, attacker, defender, weather)
-    damage = int(damage * other_damage_multipliers)
+    other_damage_modifiers = __compute_other_damage_modifier(move, move_type, attacker, defender, weather)
+    damage = int(damage * other_damage_modifiers)
 
     # Some moves have a perfect critical hit rate
     if move.id in PERFECT_CRIT_RATE_MOVES_IDS and defender.ability not in ["battlearmor", "shellarmour"]:
@@ -524,3 +525,14 @@ def compute_move_accuracy(move: Move,
         print("Move {0} accuracy: {1}".format(move.id, move_accuracy))
 
     return move_accuracy
+
+
+def retrieve_battle_status(battle: Battle) -> dict:
+    # Retrieve weather and terrain
+    weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
+    terrain = None if len(battle.fields.keys()) == 0 else next(iter(battle.fields.keys()))
+
+    # Retrieve conditions for both sides
+    bot_conditions = list(battle.side_conditions.keys())
+    opp_conditions = list(battle.opponent_side_conditions.keys())
+    return {"weather": weather, "terrain": terrain, "bot_conditions": bot_conditions, "opp_conditions": opp_conditions}
