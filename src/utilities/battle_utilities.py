@@ -1,7 +1,9 @@
-from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender, Effect, Battle
+from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender, Effect,\
+    Battle, Gen8Move
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
-from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
+from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers,\
+    compute_stat, STATUS_CONDITIONS
 
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
                       "firepunch", "focuspunch", "hammerarm", "icehammer", "icepunch", "machpunch",
@@ -18,10 +20,46 @@ AURA_PULSE_MOVES_IDS = ["aurasphere", "darkpulse", "dragonpulse", "healpulse", "
 PERFECT_CRIT_RATE_MOVES_IDS = ["frostbreath", "stormthrow", "surgingstrikes", "wickedblow", "zippyzap"]
 PROTECTING_MOVES = ["banefulbunker", "detect", "kingsshield", "matblock", "obstruct", "protect",
                     "spikyshield", "wideguard"]
-IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze"]
+IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze", "neutralizinggas"]
 ENTRY_HAZARDS = {"spikes": SideCondition.SPIKES, "stealhrock": SideCondition.STEALTH_ROCK,
                  "stickyweb": SideCondition.STICKY_WEB, "toxicspikes": SideCondition.TOXIC_SPIKES}
 ANTI_HAZARDS_MOVES = ["rapidspin", "defog"]
+DEFAULT_MOVES_IDS = {PokemonType.BUG: {MoveCategory.PHYSICAL: Gen8Move("xscissor"),
+                                       MoveCategory.SPECIAL: Gen8Move("bugbuzz")},
+                     PokemonType.DARK: {MoveCategory.PHYSICAL: Gen8Move("crunch"),
+                                        MoveCategory.SPECIAL: Gen8Move("darkpulse")},
+                     PokemonType.DRAGON: {MoveCategory.PHYSICAL: Gen8Move("outrage"),
+                                          MoveCategory.SPECIAL: Gen8Move("dragonpulse")},
+                     PokemonType.ELECTRIC: {MoveCategory.PHYSICAL: Gen8Move("wildcharge"),
+                                            MoveCategory.SPECIAL: Gen8Move("thunderbolt")},
+                     PokemonType.FAIRY: {MoveCategory.PHYSICAL: Gen8Move("playrough"),
+                                         MoveCategory.SPECIAL: Gen8Move("moonblast")},
+                     PokemonType.FIGHTING: {MoveCategory.PHYSICAL: Gen8Move("closecombat"),
+                                            MoveCategory.SPECIAL: Gen8Move("focusblast")},
+                     PokemonType.FIRE: {MoveCategory.PHYSICAL: Gen8Move("flareblitz"),
+                                        MoveCategory.SPECIAL: Gen8Move("fireblast")},
+                     PokemonType.FLYING: {MoveCategory.PHYSICAL: Gen8Move("fly"),
+                                          MoveCategory.SPECIAL: Gen8Move("hurricane")},
+                     PokemonType.GHOST: {MoveCategory.PHYSICAL: Gen8Move("shadowclaw"),
+                                         MoveCategory.SPECIAL: Gen8Move("shadowball")},
+                     PokemonType.GRASS: {MoveCategory.PHYSICAL: Gen8Move("powerwhip"),
+                                         MoveCategory.SPECIAL: Gen8Move("energyball")},
+                     PokemonType.GROUND: {MoveCategory.PHYSICAL: Gen8Move("earthquake"),
+                                          MoveCategory.SPECIAL: Gen8Move("earthpower")},
+                     PokemonType.ICE: {MoveCategory.PHYSICAL: Gen8Move("icefang"),
+                                       MoveCategory.SPECIAL: Gen8Move("icebeam")},
+                     PokemonType.NORMAL: {MoveCategory.PHYSICAL: Gen8Move("doubleedge"),
+                                          MoveCategory.SPECIAL: Gen8Move("hypervoice")},
+                     PokemonType.POISON: {MoveCategory.PHYSICAL: Gen8Move("gunkshot"),
+                                          MoveCategory.SPECIAL: Gen8Move("sludgebomb")},
+                     PokemonType.PSYCHIC: {MoveCategory.PHYSICAL: Gen8Move("zenheadbutt"),
+                                           MoveCategory.SPECIAL: Gen8Move("psychic")},
+                     PokemonType.ROCK: {MoveCategory.PHYSICAL: Gen8Move("stoneedge"),
+                                        MoveCategory.SPECIAL: Gen8Move("powergem")},
+                     PokemonType.STEEL: {MoveCategory.PHYSICAL: Gen8Move("ironhead"),
+                                         MoveCategory.SPECIAL: Gen8Move("flashcannon")},
+                     PokemonType.WATER: {MoveCategory.PHYSICAL: Gen8Move("waterfall"),
+                                         MoveCategory.SPECIAL: Gen8Move("surf")}}
 
 
 def __compute_base_power_modifiers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
@@ -40,7 +78,7 @@ def __compute_base_power_modifiers(move: Move, attacker: Pokemon, defender: Poke
     if move.id == "venoshock" and defender.status in [Status.PSN, Status.TOX]:
         base_power_multiplier *= 2
 
-    # Moves of pokèmon with the following abilities have their power increased if the hp is less or equal than 1/3
+    # Moves of pok*mon with the following abilities have their power increased if the hp is less or equal than 1/3
     if attacker.current_hp_fraction <= 0.33:
         if attacker.ability == "overgrow" and move_type is PokemonType.GRASS:
             base_power_multiplier *= 1.5
@@ -94,17 +132,17 @@ def __compute_base_power_modifiers(move: Move, attacker: Pokemon, defender: Poke
     if attacker.ability == "punkrock" and move.id in SOUND_BASED_MOVES_IDS:
         base_power_multiplier *= 1.3
 
-    # If a pokèmon with the "dark aura" ability is active, the power of dark-type moves is increased
+    # If a pokémon with the "dark aura" ability is active, the power of dark-type moves is increased
     if "darkaura" in [attacker.ability, defender.ability] and move_type is PokemonType.DARK:
-        # If a pokèmon with the "aura break" ability is active, the power of dark-type moves is decreased
+        # If a pokémon with the "aura break" ability is active, the power of dark-type moves is decreased
         if "aurabreak" not in [attacker.ability, defender.ability]:
             base_power_multiplier *= 1.33
         elif attacker.ability not in IGNORE_EFFECT_ABILITIES_IDS:
             base_power_multiplier *= 0.75
 
-    # If a pokèmon with the "fairy aura" ability is active, the power of fairy-type moves is increased
+    # If a pokémon with the "fairy aura" ability is active, the power of fairy-type moves is increased
     if "fairyaura" in [attacker.ability, defender.ability] and move_type is PokemonType.FAIRY:
-        # If a pokèmon with the "aura break" ability is active, the power of fairy-type moves is decreased
+        # If a pokémon with the "aura break" ability is active, the power of fairy-type moves is decreased
         if "aurabreak" not in [attacker.ability, defender.ability]:
             base_power_multiplier *= 1.33
         elif attacker.ability not in IGNORE_EFFECT_ABILITIES_IDS:
@@ -154,53 +192,57 @@ def __compute_base_power_modifiers(move: Move, attacker: Pokemon, defender: Poke
     return {"power_multiplier": base_power_multiplier, "move_type": move_type}
 
 
-def __compute_other_damage_modifier(move: Move,
-                                    move_type: PokemonType,
-                                    attacker: Pokemon,
-                                    defender: Pokemon,
-                                    weather: Weather) -> float:
+def __compute_other_damage_modifiers(move: Move,
+                                     move_type: PokemonType,
+                                     attacker: Pokemon,
+                                     defender: Pokemon,
+                                     weather: Weather,
+                                     defender_conditions: list[SideCondition]) -> float:
     damage_modifier = 1
 
-    # Pokèmon with the water absorb ability suffer no damage from water type moves
+    # Pokémon with the water absorb ability suffer no damage from water type moves
     if move_type is PokemonType.WATER and ("waterabsorb" in defender.possible_abilities
                                            or "dryskin" in defender.possible_abilities
                                            or "stormdrain" in defender.possible_abilities):
         return 0
 
-    # Pokèmon with the water absorb ability suffer no damage from water type moves
+    # Pokémon with the water absorb ability suffer no damage from water type moves
     if move_type is PokemonType.GROUND and defender.item != "ironball" and\
             ("levitate" in defender.possible_abilities or Effect.MAGNET_RISE in defender.effects):
         return 0
 
-    # Pokèmon with the volt absorb ability suffer no damage from electric type moves
+    # Pokémon with the volt absorb ability suffer no damage from electric type moves
     if move_type is PokemonType.ELECTRIC and ("voltabsorb" in defender.possible_abilities
                                               or "motordrive" in defender.possible_abilities
                                               or "lightningrod" in defender.possible_abilities):
         return 0
 
-    # Pokèmon with the flash fire ability suffer no damage from fire type moves
+    # Pokémon with the flash fire ability suffer no damage from fire type moves
     if move_type is PokemonType.FIRE and "flashfire" in defender.possible_abilities:
         return 0
 
-    # Pokèmon with the sap sipper ability suffer no damage from grass type moves
+    # Pokémon with the sap sipper ability suffer no damage from grass type moves
     if move_type is PokemonType.GRASS and "sapsipperr" in defender.possible_abilities:
         return 0
 
-    # Pokèmon with the wonder guard ability can only take damage from super-effective moves
+    # Pokémon with the wonder guard ability can only take damage from super-effective moves
     if defender.ability == "wonderguard" and defender.damage_multiplier(move) < 2:
         return 0
 
     if move.id in SOUND_BASED_MOVES_IDS and "soundproof" in defender.possible_abilities:
         return 0
 
+    if move.id == "poltergeist" and defender.item is None:
+        return 0
+
     if defender.ability == "punkrock" and move.id in SOUND_BASED_MOVES_IDS:
         damage_modifier *= 0.5
 
-    # Pokèmon with the following abilities receive 0.75 less damage from super-effective moves
+    # Pokémon with the following abilities receive 0.75 less damage from super-effective moves
     if defender.ability in ["filter", "solidrock", "prismarmor"] and defender.damage_multiplier(move) >= 2:
         damage_modifier *= .75
 
-    # Pokèmon with the following abilities receive 0.5 less damage from super-effective moves while at full hp
+    # Pokémon with the following abilities receive 0.5 less damage from super-effective moves while at full hp
     if defender.ability in ["multiscale", "shadowshield"] and defender.current_hp_fraction == 1:
         damage_modifier *= 0.5
 
@@ -215,7 +257,7 @@ def __compute_other_damage_modifier(move: Move,
             else:
                 damage_modifier *= 1.25
 
-    # Pokèmon with the rivalry ability deal 1.25 more damage to pokèmon of the same gender,
+    # Pokémon with the rivalry ability deal 1.25 more damage to pokémon of the same gender,
     # while dealing 0.75 less damage to the ones from the opposite gender
     if attacker.ability == "rivalry" and PokemonGender.NEUTRAL not in [attacker.gender, defender.gender]:
         if attacker.gender == defender.gender:
@@ -223,23 +265,47 @@ def __compute_other_damage_modifier(move: Move,
         else:
             damage_modifier *= 0.75
 
-    # Pokèmon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
+    # Pokémon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
     if attacker.ability == "neuroforce" and defender.damage_multiplier(move) >= 2:
         damage_modifier *= 1.25
 
+    # Pokémon with the "water bubble" ability suffer half the damage from fire-type moves
     if defender.ability == "waterbubble" and move_type is PokemonType.FIRE:
         damage_modifier *= 0.5
 
+    # Pokémon with the "fluffy" ability suffer double the damage from fire-type moves
     if defender.ability == "fluffy" and move_type is PokemonType.FIRE:
         damage_modifier *= 2
 
-    if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] and defender.effects:
+    # Pokémon with the "merciless" ability deal 1.5 more damage to poisoned pokémon
+    if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX]\
+            and defender.ability not in ["battlearmor", "shellarmour"]:
         damage_modifier *= 1.5
 
+    if Effect.FLASH_FIRE in attacker.effects and move_type is PokemonType.FIRE:
+        damage_modifier *= 1.5
+
+    if move.id == "knockoff" and defender.item is not None:
+        damage_modifier *= 1.5
+
+    # Some moves do double the damage against dynamaxed pokémon
     if move.id in ["behemothblade", "behemothbash", "dynamaxcannon"] and defender.is_dynamaxed:
         damage_modifier *= 2
 
-    # Pokèmon that held the life orb item deal 1.1 damage
+    # Some side conditions on the opponent's side halve the move's damage
+    if SideCondition.REFLECT in defender_conditions and move.category is MoveCategory.PHYSICAL:
+        damage_modifier *= 0.5
+        print("Reflect in use")
+
+    if SideCondition.AURORA_VEIL in defender.effects and move.category is not MoveCategory.Status:
+        damage_modifier *= 0.5
+        print("Veil in use")
+
+    if SideCondition.LIGHT_SCREEN in defender.effects and move.category is MoveCategory.SPECIAL:
+        damage_modifier *= 0.5
+        print("Light screen in use")
+
+    # Pokémon that held the life orb item deal 1.1 damage
     if attacker.item == "lifeorb":
         damage_modifier *= 1.299
 
@@ -250,7 +316,8 @@ def compute_damage(move: Move,
                    attacker: Pokemon,
                    defender: Pokemon,
                    weather: Weather = None,
-                   terrain: Field = None,
+                   terrains: list[Field] = None,
+                   defender_conditions: list[SideCondition] = None,
                    is_bot: bool = False,
                    verbose: bool = False) -> int:
     if move.category is MoveCategory.STATUS:
@@ -271,7 +338,7 @@ def compute_damage(move: Move,
         else:
             return 0
 
-    # Take care of moves that deals damage equals to a percent of the defender hp
+    # Take care of moves that deal damage equal to a percent of the defender hp
     if move.id in ["superfang", "naturesmadness"] and defender.damage_multiplier(move) > 0:
         return int(defender.current_hp / 2)
 
@@ -327,12 +394,12 @@ def compute_damage(move: Move,
         defender_stat["value"] = defender.stats[def_stat]
 
     # Compute stat modifiers
-    attacker_stat["value"] *= compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrain)
+    attacker_stat["value"] *= compute_stat_modifiers(attacker, attacker_stat["stat"], weather, terrains)
     if attacker_stat["stat"] in ["atk", "spa"] and defender.ability == "thickfat"\
             and move_type in [PokemonType.FIRE, PokemonType.ICE]:
         attacker_stat["value"] *= 0.5
 
-    defender_stat["value"] *= compute_stat_modifiers(defender, defender_stat["stat"], weather, terrain)
+    defender_stat["value"] *= compute_stat_modifiers(defender, defender_stat["stat"], weather, terrains)
 
     if defender.ability != "unaware":
         attacker_stat["value"] *= compute_stat_boost(attacker, attacker_stat["stat"])
@@ -374,19 +441,19 @@ def compute_damage(move: Move,
 
     # Compute the effect of the terrain
     terrain_multiplier = 1
-    if terrain:
-        if terrain is Field.ELECTRIC_TERRAIN:
+    if terrains:
+        if Field.ELECTRIC_TERRAIN in terrains:
             if move_type is PokemonType.ELECTRIC:
                 terrain_multiplier = 1.3
-        elif terrain is Field.GRASSY_TERRAIN:
+        elif Field.GRASSY_TERRAIN in terrains:
             if move_type is PokemonType.GRASS:
                 terrain_multiplier = 1.3
             elif move.id in ["earthquake", "magnitude", "bulldoze"]:
                 terrain_multiplier = 0.5
-        elif terrain is Field.MISTY_TERRAIN:
+        elif Field.MISTY_TERRAIN in terrains:
             if move_type is PokemonType.DRAGON:
                 terrain_multiplier = 0.5
-        elif terrain is Field.PSYCHIC_TERRAIN:
+        elif Field.PSYCHIC_TERRAIN in terrains:
             if move_type is PokemonType.PSYCHIC:
                 terrain_multiplier = 1.3
             elif move.priority > 0:
@@ -415,7 +482,8 @@ def compute_damage(move: Move,
     damage *= type_multiplier
 
     # Compute the effect of various abilities and items
-    other_damage_modifiers = __compute_other_damage_modifier(move, move_type, attacker, defender, weather)
+    other_damage_modifiers = __compute_other_damage_modifiers(move, move_type, attacker,
+                                                              defender, weather, defender_conditions)
     damage = int(damage * other_damage_modifiers)
 
     # Some moves have a perfect critical hit rate
@@ -425,10 +493,6 @@ def compute_damage(move: Move,
     # There are moves that hit more than time
     damage *= int(move.expected_hits)
 
-    # The move false swipe will never kill the pokèmon
-    if move.id == "falseswipe" and defender.current_hp <= damage:
-        damage = defender.current_hp - 1
-
     if verbose:
         print("Damage: {0}\n".format(damage))
 
@@ -436,46 +500,38 @@ def compute_damage(move: Move,
 
 
 def outspeed_prob(bot_pokemon: Pokemon,
-                  opponent_pokemon: Pokemon,
+                  opp_pokemon: Pokemon,
                   weather: Weather = None,
-                  terrain: Field = None,
-                  verbose: bool = False) -> float:
-    # Retrieve the bot pokèmon speed
-    bot_spe = bot_pokemon.stats["spe"]
-
-    # Estimate the lower and higher bound for the opponent pokèmon speed, assume that ivs are 31 for both cases
-    opponent_spe_lb = estimate_stat(opponent_pokemon, "spe", evs=0)
-    opponent_spe_ub = estimate_stat(opponent_pokemon, "spe", evs=63)
-
-    # Compute the modifiers to the stat
-    bot_spe *= compute_stat_modifiers(bot_pokemon, "spe", weather, terrain)
-    opponent_spe_modifier = compute_stat_modifiers(opponent_pokemon, "spe", weather, terrain)
-    opponent_spe_lb *= opponent_spe_modifier
-    opponent_spe_ub *= opponent_spe_modifier
-
-    # Compute the boost to the stat
-    bot_spe = int(bot_spe * compute_stat_boost(bot_pokemon, "spe"))
-    opponent_spe_boost = compute_stat_boost(opponent_pokemon, "spe")
-    opponent_spe_lb = int(opponent_spe_lb * opponent_spe_boost)
-    opponent_spe_ub = int(opponent_spe_ub * opponent_spe_boost)
+                  terrains: list[Field] = None,
+                  verbose: bool = False) -> dict[str, float]:
+    # Compute the stats for both pokémon
+    bot_spe = compute_stat(bot_pokemon, "spe", weather, terrains, True)
+    opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, evs=0)
+    opp_spe_ub = compute_stat(opp_pokemon, "spe", weather, terrains, evs=63)
     if verbose:
-        print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_spe, opponent_pokemon.species,
-                                                      opponent_spe_lb, opponent_spe_ub))
+        print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_spe, opp_pokemon.species,
+                                                      opp_spe_lb, opp_spe_ub))
 
-    if bot_spe < opponent_spe_lb:
-        return 0
-    elif bot_spe > opponent_spe_ub:
-        return 1
+    # Compute the outspeed probability
+    if bot_spe < opp_spe_lb:
+        outspeed_p = 0
+    elif bot_spe > opp_spe_ub:
+        outspeed_p = 1
     else:
-        prob_out_speed = (bot_spe - opponent_spe_lb) / 63
-        return round(prob_out_speed, 2)
+        outspeed_p = (bot_spe - opp_spe_lb) / 63
+
+    # If "trick room" is active then the priority given by the "spe" stat are inverted
+    if terrains and Field.TRICK_ROOM in terrains:
+        outspeed_p = 1 - outspeed_p
+
+    return {"outspeed_p": round(outspeed_p, 2), "lb": opp_spe_lb, "ub": opp_spe_ub}
 
 
 def compute_move_accuracy(move: Move,
                           attacker: Pokemon,
                           defender: Pokemon,
                           weather: Weather = None,
-                          terrain: Field = None,
+                          terrains: list[Field] = None,
                           verbose: bool = False) -> float:
     # Some moves can't miss
     if move.accuracy is True or attacker.is_dynamaxed:
@@ -511,8 +567,8 @@ def compute_move_accuracy(move: Move,
         accuracy *= 0.8
 
     # Apply modifiers to attacker's accuracy and defender's evasion
-    accuracy *= compute_stat_modifiers(attacker, "accuracy", weather, terrain)
-    evasion = compute_stat_modifiers(defender, "evasion", weather, terrain)
+    accuracy *= compute_stat_modifiers(attacker, "accuracy", weather, terrains)
+    evasion = compute_stat_modifiers(defender, "evasion", weather, terrains)
 
     # Compute boosts to the previous stats
     accuracy *= compute_stat_boost(attacker, "accuracy")
@@ -530,9 +586,10 @@ def compute_move_accuracy(move: Move,
 def retrieve_battle_status(battle: Battle) -> dict:
     # Retrieve weather and terrain
     weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
-    terrain = None if len(battle.fields.keys()) == 0 else next(iter(battle.fields.keys()))
+    terrains = None if len(battle.fields.keys()) == 0 else list(battle.fields.keys())
 
     # Retrieve conditions for both sides
     bot_conditions = list(battle.side_conditions.keys())
     opp_conditions = list(battle.opponent_side_conditions.keys())
-    return {"weather": weather, "terrain": terrain, "bot_conditions": bot_conditions, "opp_conditions": opp_conditions}
+    return {"weather": weather, "terrains": terrains, "bot_conditions": bot_conditions,
+            "opp_conditions": opp_conditions}

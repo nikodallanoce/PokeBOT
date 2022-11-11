@@ -21,10 +21,11 @@ class BestDamagePlayer(Player):
             terrain = None if len(battle.fields.keys()) == 0 else next(iter(battle.fields.keys()))
             best_move: Move = max(battle.available_moves,
                                   key=lambda move: compute_damage(move, bot_pokemon, opponent_pokemon, weather, terrain,
-                                                                  True, self.verbose))
+                                                                  list(battle.opponent_side_conditions.keys()), True,
+                                                                  self.verbose))
             if self.verbose:
-                print("Outspeed probability {0}".format(outspeed_prob(bot_pokemon, opponent_pokemon,
-                                                                      weather, terrain, self.verbose)))
+                print("Outspeed probability {0}".format(
+                    outspeed_prob(bot_pokemon, opponent_pokemon, weather, terrain, self.verbose)["outspeed_p"]))
                 print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 100))
 
             gimmick = False
