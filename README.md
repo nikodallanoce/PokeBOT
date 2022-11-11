@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ```
 After doing that, you can run the following command
 ```bash
-python run_bot.py --user bot_username --password bot_password
+python run_remote.py --user bot_username --password bot_password
 ```
 If no username or password are passed, then the bot will try to retrieve such information from the environment variables *BotAIF_username* and *BotAIF_password*, if this doesn't work it will give an error.
 
@@ -34,7 +34,8 @@ Moreover, the command accepts some other arguments in order to change the bot's 
   - **MBP** for the MaxBasePower player.
   - **BD** for the BestDamage player.
   - **RB** for the RuleBased player.
-  - **MM** for the minimax player.
+  - **MM** for the MiniMax player.
+- You can see the bot status and infos at each turn by using ```--verbose```.
 - You can save the bot results in csv file by using ```--save```, such file is then stored inside the *bot_data* directory.
 
 Have fun playing with the bot.
