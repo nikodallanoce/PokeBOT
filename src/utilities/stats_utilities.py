@@ -25,6 +25,10 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 21, nat
 
 
 def compute_stat_boost(pokemon: Pokemon, stat: str) -> float:
+    # The "hp" stat can't have boosts
+    if stat == "hp":
+        return 1
+
     if stat not in ["accuracy, evasion"]:
         if pokemon.boosts[stat] > 0:
             stat_boost = (2 + pokemon.boosts[stat]) / 2

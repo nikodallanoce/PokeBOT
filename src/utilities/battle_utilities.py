@@ -1,4 +1,4 @@
-from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender
+from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender, Effect, Battle
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
 from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers, STATUS_CONDITIONS
@@ -24,7 +24,7 @@ ENTRY_HAZARDS = {"spikes": SideCondition.SPIKES, "stealhrock": SideCondition.STE
 ANTI_HAZARDS_MOVES = ["rapidspin", "defog"]
 
 
-def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
+def __compute_base_power_modifiers(move: Move, attacker: Pokemon, defender: Pokemon) -> dict:
     base_power_multiplier = 1
     move_type = move.type
 
@@ -131,14 +131,6 @@ def __compute_base_power_multipliers(move: Move, attacker: Pokemon, defender: Po
     if attacker.ability == "flareboost" and move.category is MoveCategory.SPECIAL and attacker.status in [Status.BRN]:
         base_power_multiplier *= 1.5
 
-    # Pokèmon with the rivalry ability deal 1.25 more damage to pokèmon of the same gender,
-    # while dealing 0.75 less damage to the ones from the opposite gender
-    if attacker.ability == "rivalry" and PokemonGender.NEUTRAL not in [attacker.gender, defender.gender]:
-        if attacker.gender == defender.gender:
-            base_power_multiplier *= 1.25
-        else:
-            base_power_multiplier *= 0.75
-
     # The "dragon's maw" ability boosts the power of dragon-type moves
     if attacker.ability == "dragonsmaw" and move_type is PokemonType.DRAGON:
         base_power_multiplier *= 1.5
@@ -176,7 +168,8 @@ def __compute_other_damage_modifier(move: Move,
         return 0
 
     # Pokèmon with the water absorb ability suffer no damage from water type moves
-    if move_type is PokemonType.GROUND and "levitate" in defender.possible_abilities and defender.item != "ironball":
+    if move_type is PokemonType.GROUND and defender.item != "ironball" and\
+            ("levitate" in defender.possible_abilities or Effect.MAGNET_RISE in defender.effects):
         return 0
 
     # Pokèmon with the volt absorb ability suffer no damage from electric type moves
@@ -222,6 +215,14 @@ def __compute_other_damage_modifier(move: Move,
             else:
                 damage_modifier *= 1.25
 
+    # Pokèmon with the rivalry ability deal 1.25 more damage to pokèmon of the same gender,
+    # while dealing 0.75 less damage to the ones from the opposite gender
+    if attacker.ability == "rivalry" and PokemonGender.NEUTRAL not in [attacker.gender, defender.gender]:
+        if attacker.gender == defender.gender:
+            damage_modifier *= 1.25
+        else:
+            damage_modifier *= 0.75
+
     # Pokèmon with the neuroforce ability deal 1.25 more damage if they are using a super-effective move
     if attacker.ability == "neuroforce" and defender.damage_multiplier(move) >= 2:
         damage_modifier *= 1.25
@@ -235,7 +236,7 @@ def __compute_other_damage_modifier(move: Move,
     if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] and defender.effects:
         damage_modifier *= 1.5
 
-    if move.id in ["behemothblade", "dynamaxcannon"] and defender.is_dynamaxed:
+    if move.id in ["behemothblade", "behemothbash", "dynamaxcannon"] and defender.is_dynamaxed:
         damage_modifier *= 2
 
     # Pokèmon that held the life orb item deal 1.1 damage
@@ -281,7 +282,7 @@ def compute_damage(move: Move,
     level_multiplier = 2 * attacker.level / 5 + 2
 
     # Compute the move's power
-    base_power_multiplier = __compute_base_power_multipliers(move, attacker, defender)
+    base_power_multiplier = __compute_base_power_modifiers(move, attacker, defender)
     power = int(move.base_power * base_power_multiplier["power_multiplier"])
     move_type = base_power_multiplier["move_type"]
 
@@ -414,8 +415,8 @@ def compute_damage(move: Move,
     damage *= type_multiplier
 
     # Compute the effect of various abilities and items
-    other_damage_multipliers = __compute_other_damage_modifier(move, move_type, attacker, defender, weather)
-    damage = int(damage * other_damage_multipliers)
+    other_damage_modifiers = __compute_other_damage_modifier(move, move_type, attacker, defender, weather)
+    damage = int(damage * other_damage_modifiers)
 
     # Some moves have a perfect critical hit rate
     if move.id in PERFECT_CRIT_RATE_MOVES_IDS and defender.ability not in ["battlearmor", "shellarmour"]:
@@ -524,3 +525,14 @@ def compute_move_accuracy(move: Move,
         print("Move {0} accuracy: {1}".format(move.id, move_accuracy))
 
     return move_accuracy
+
+
+def retrieve_battle_status(battle: Battle) -> dict:
+    # Retrieve weather and terrain
+    weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
+    terrain = None if len(battle.fields.keys()) == 0 else next(iter(battle.fields.keys()))
+
+    # Retrieve conditions for both sides
+    bot_conditions = list(battle.side_conditions.keys())
+    opp_conditions = list(battle.opponent_side_conditions.keys())
+    return {"weather": weather, "terrain": terrain, "bot_conditions": bot_conditions, "opp_conditions": opp_conditions}
