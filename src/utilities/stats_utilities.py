@@ -1,5 +1,6 @@
 from poke_env.environment import Pokemon, Weather, Field, Status, PokemonType, Effect
 from poke_env.data import NATURES
+from typing import Union
 
 STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
 
@@ -24,21 +25,29 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 21, nat
     return estimated_stat
 
 
-def compute_stat_boost(pokemon: Pokemon, stat: str) -> float:
+def compute_stat_boost(pokemon: Pokemon, stat: str, boost: Union[int | None] = None) -> float:
+    if stat not in list(pokemon.base_stats.keys()) and stat not in ["accuracy", "evasion"]:
+        raise ValueError
+
     # The "hp" stat can't have boosts
     if stat == "hp":
         return 1
 
-    if stat not in ["accuracy, evasion"]:
-        if pokemon.boosts[stat] > 0:
-            stat_boost = (2 + pokemon.boosts[stat]) / 2
-        else:
-            stat_boost = 2 / (2 - pokemon.boosts[stat])
+    if boost and -6 <= boost <= 6:
+        boost_to_apply = boost
     else:
-        if pokemon.boosts[stat] > 0:
-            stat_boost = (3 + pokemon.boosts[stat]) / 3
+        boost_to_apply = pokemon.boosts[stat]
+
+    if stat not in ["accuracy, evasion"]:
+        if boost_to_apply > 0:
+            stat_boost = (2 + boost_to_apply) / 2
         else:
-            stat_boost = 3 / (3 - pokemon.boosts[stat])
+            stat_boost = 2 / (2 - boost_to_apply)
+    else:
+        if boost_to_apply > 0:
+            stat_boost = (3 + boost_to_apply) / 3
+        else:
+            stat_boost = 3 / (3 - boost_to_apply)
 
     return round(stat_boost, 2)
 
