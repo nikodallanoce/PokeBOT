@@ -68,6 +68,7 @@ DEFAULT_MOVES_IDS = {PokemonType.BUG: {MoveCategory.PHYSICAL: Gen8Move("xscissor
 
 def move_changes_type(move: Move, attacker: Pokemon) -> (bool, PokemonType):
     move_type = move.type
+    
     # The "normalize" ability changes all move types to normal-type and boosts their power
     if attacker.ability == "normalize" and move_type is not PokemonType.NORMAL:
         move_type = PokemonType.NORMAL
@@ -724,7 +725,7 @@ def compute_healing(pokemon: Pokemon,
 def retrieve_battle_status(battle: AbstractBattle) -> dict:
     # Retrieve weather and terrain
     weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
-    terrains = list() if len(battle.fields.keys()) == 0 else list(battle.fields.keys())
+    terrains = list(battle.fields.keys())
 
     # Retrieve conditions for both sides
     bot_conditions = list(battle.side_conditions.keys())
