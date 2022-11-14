@@ -88,7 +88,7 @@ def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
 def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> float:
     def_modifier = 1
 
-    if terrains and pokemon.ability == "grasspelt" and Field.GRASSY_TERRAIN in terrains:
+    if pokemon.ability == "grasspelt" and Field.GRASSY_TERRAIN in terrains:
         def_modifier *= 1.5
 
     if pokemon.ability == "marvelscale" and pokemon.status in STATUS_CONDITIONS:
@@ -162,7 +162,7 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains:
     if pokemon.ability == "quickfeet" and pokemon.status in STATUS_CONDITIONS:
         spe_modifier *= 1.5
 
-    if terrains and pokemon.ability == "surgesurfer" and Field.ELECTRIC_TERRAIN in terrains:
+    if pokemon.ability == "surgesurfer" and Field.ELECTRIC_TERRAIN in terrains:
         spe_modifier *= 2
 
     if pokemon.item == "choicescarf":

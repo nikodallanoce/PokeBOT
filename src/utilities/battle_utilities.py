@@ -1,9 +1,10 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, Status, SideCondition, PokemonGender, Effect,\
-    Battle, Gen8Move
+    AbstractBattle, Gen8Move
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
 from src.utilities.stats_utilities import estimate_stat, compute_stat_boost, compute_stat_modifiers,\
-    compute_stat, STATUS_CONDITIONS
+    compute_stat, stats_to_string, STATUS_CONDITIONS
+from src.utilities.utilities import types_to_string
 from typing import Union
 
 PUNCHING_MOVES_IDS = ["bulletpunch", "cometpunch", "dizzypunch", "doubleironbash", "drainpunch", "dynamicpunch",
@@ -200,6 +201,9 @@ def compute_base_power_modifiers(move: Move, move_type: PokemonType, attacker: P
     if attacker.ability == "waterbubble" and move_type is PokemonType.WATER:
         base_power_modifier *= 2
 
+    if move.id == "hex" and defender.status in STATUS_CONDITIONS:
+        base_power_modifier *= 2
+
     # The "punk rock" ability boosts the power of sound-based moves
     if attacker.ability == "punkrock" and move.id in SOUND_BASED_MOVES_IDS:
         base_power_modifier *= 1.3
@@ -363,7 +367,7 @@ def compute_other_damage_modifiers(move: Move,
         damage_modifier *= 2
 
     # The "knock-off" move deal 1.5 more damage if the defender is holding an item
-    if move.id == "knockoff" and not defender.item:
+    if move.id == "knockoff" and defender.item:
         damage_modifier *= 1.5
 
     # Some moves do double the damage against dynamaxed pokémon
@@ -558,7 +562,7 @@ def compute_damage(move: Move,
     damage = int(damage * other_damage_modifiers)
 
     # Some moves have a perfect critical hit rate
-    if move.id in PERFECT_CRIT_RATE_MOVES_IDS and defender.ability not in ["battlearmor", "shellarmour"]:
+    if move.crit_ratio == 6 and defender.ability not in ["battlearmor", "shellarmour"]:
         damage *= 1.5
 
     # There are moves that hit more than time
@@ -592,7 +596,7 @@ def outspeed_prob(bot_pokemon: Pokemon,
         outspeed_p = (bot_spe - opp_spe_lb) / 63
 
     # If "trick room" is active then the priority given by the "spe" stat are inverted
-    if terrains and Field.TRICK_ROOM in terrains:
+    if Field.TRICK_ROOM in terrains:
         outspeed_p = 1 - outspeed_p
 
     return {"outspeed_p": round(outspeed_p, 2), "lb": opp_spe_lb, "ub": opp_spe_ub}
@@ -682,7 +686,7 @@ def compute_healing(pokemon: Pokemon,
         return 0, 0
 
     if move.id == "rest":
-        if terrains and (Field.ELECTRIC_TERRAIN in terrains or Field.PSYCHIC_TERRAIN in terrains):
+        if Field.ELECTRIC_TERRAIN in terrains or Field.PSYCHIC_TERRAIN in terrains:
             return 0, 0
 
         healing = max_hp - current_hp
@@ -717,13 +721,39 @@ def compute_healing(pokemon: Pokemon,
     return healing, healing_percentage
 
 
-def retrieve_battle_status(battle: Battle) -> dict:
+def retrieve_battle_status(battle: AbstractBattle) -> dict:
     # Retrieve weather and terrain
     weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
-    terrains = None if len(battle.fields.keys()) == 0 else list(battle.fields.keys())
+    terrains = list() if len(battle.fields.keys()) == 0 else list(battle.fields.keys())
 
     # Retrieve conditions for both sides
     bot_conditions = list(battle.side_conditions.keys())
     opp_conditions = list(battle.opponent_side_conditions.keys())
     return {"weather": weather, "terrains": terrains, "bot_conditions": bot_conditions,
             "opp_conditions": opp_conditions}
+
+
+def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: Weather, terrains: list[Field]) -> str:
+    bot_max_hp = bot_pokemon.max_hp
+    bot_hp = bot_pokemon.current_hp
+    opp_max_hp = compute_stat(opp_pokemon, "hp", weather, terrains)
+    opp_hp = int(opp_max_hp * opp_pokemon.current_hp_fraction)
+
+    bot_status = "Bot pokémon: {0}, Types: {1}, hp: {2}/{3}\n"\
+        .format(bot_pokemon.species, types_to_string(bot_pokemon.types), bot_hp, bot_max_hp)
+    bot_status += "Ability: {0}, Item: {1}\n".format(bot_pokemon.ability, bot_pokemon.item)
+    bot_stats = stats_to_string(bot_pokemon, list(bot_pokemon.stats.keys()), weather, terrains, True)
+    bot_status += "Stats: {0}\n\n".format(bot_stats)
+
+    bot_status += "Opponent pokèmon: {0}, Types: {1}, hp: {2}/{3}\n"\
+        .format(opp_pokemon.species, types_to_string(opp_pokemon.types), opp_hp, opp_max_hp)
+    if opp_pokemon.ability:
+        opp_abilities = "Ability: {0}".format(opp_pokemon.ability)
+    else:
+        opp_abilities = "Possible abilities: {0}".format(opp_pokemon.possible_abilities)
+
+    bot_status += "{0}, Item: {1}\n".format(opp_abilities, opp_pokemon.item)
+    opp_stats = stats_to_string(opp_pokemon, list(opp_pokemon.stats.keys()), weather, terrains)
+    bot_status += "Stats: {0}\n\n".format(opp_stats)
+    bot_status += "Weather: {0}, Terrains: {1}".format(weather, terrains)
+    return bot_status
