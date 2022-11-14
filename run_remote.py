@@ -4,6 +4,7 @@ import asyncio
 from poke_env import PlayerConfiguration, ShowdownServerConfiguration
 from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.rulebased_player import RuleBasedPlayer
+from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.utilities import challenge_player
 
 
@@ -14,6 +15,7 @@ def parse_arguments(known=False):
     parser.add_argument("--matches", type=int, default=1, help="the number of challenges that the bot will accept")
     parser.add_argument("--player", type=str, default="RB",
                         help="the bot's playstyle, MBP MaxBasePower, BD BestDamage, RB RuleBased, MM MiniMax")
+    parser.add_argument("--verbose", action="store_true", help="let the bot print its status at each turn")
     parser.add_argument("--save", action="store_true", help="save the battle results in a csv file")
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
@@ -40,8 +42,8 @@ async def run_bot_online():
         player = BestDamagePlayer(player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "RB":
         player = RuleBasedPlayer(player_config, server_configuration=ShowdownServerConfiguration)
-    # elif playstyle == "MM":
-        # player = MiniMaxPlayer(player_config, server_configuration=ShowdownServerConfiguration)
+    elif playstyle == "MM":
+        player = MiniMaxPlayer(player_config, server_configuration=ShowdownServerConfiguration)
     else:
         raise ValueError
 
