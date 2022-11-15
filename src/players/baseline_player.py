@@ -21,8 +21,8 @@ class BestDamagePlayer(Player):
                                                                   terrains, opp_conditions, True)["ub"])
             if self.verbose:
                 print("Outspeed probability {0}".format(
-                    outspeed_prob(bot_pokemon, opp_pokemon, weather, terrains, self.verbose)["outspeed_p"]))
-                print("Best move: {0}, type: {1}\n{2}\n".format(best_move.id, best_move.type, "-" * 110))
+                    outspeed_prob(bot_pokemon, opp_pokemon, weather, terrains, False)["outspeed_p"]))
+                print("Best move: {0}, type: {1}\n{2}".format(best_move.id, best_move.type, "-" * 110))
 
             gimmick = False
             if battle.can_dynamax:
@@ -55,12 +55,22 @@ class BestDamagePlayer(Player):
 
 class MaxBasePowerPlayer(Player):
 
+    verbose = False
+
     def choose_move(self, battle):
         if battle.available_moves:
+            weather, terrains, _, _ = retrieve_battle_status(battle).values()
+            if self.verbose:
+                print("Turn {0}".format(battle.turn))
+                print(bot_status_to_string(battle.active_pokemon, battle.opponent_active_pokemon, weather, terrains))
+
             best_move: Move = max(battle.available_moves, key=lambda move: move.base_power)
             gimmick = False
             if battle.can_dynamax:
                 gimmick = True
+
+            if self.verbose:
+                print("Best move: {0}, type: {1}\n{2}".format(best_move.id, best_move.type, "-" * 110))
 
             return self.create_order(best_move, dynamax=gimmick)
         else:
