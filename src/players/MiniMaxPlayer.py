@@ -1,11 +1,42 @@
+from typing import Optional
+
+from poke_env import PlayerConfiguration, ServerConfiguration
 from poke_env.player import Player
+from poke_env.teambuilder import Teambuilder
+
 from src.utilities.BattleStatus import BattleStatus
+from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
 from src.utilities.battle_utilities import *
 from src.utilities.stats_utilities import compute_stat
 
 
 class MiniMaxPlayer(Player):
+
+    def __init__(self,
+                 heuristic: Heuristic,
+                 player_configuration: Optional[PlayerConfiguration] = None,
+                 *,
+                 avatar: Optional[int] = None,
+                 battle_format: str = "gen8randombattle",
+                 log_level: Optional[int] = None,
+                 max_concurrent_battles: int = 1,
+                 save_replays: Union[bool, str] = False,
+                 server_configuration: Optional[ServerConfiguration] = None,
+                 start_timer_on_battle_start: bool = False,
+                 start_listening: bool = True,
+                 ping_interval: Optional[float] = 20.0,
+                 ping_timeout: Optional[float] = 20.0,
+                 team: Optional[Union[str, Teambuilder]] = None,
+                 ):
+        super(MiniMaxPlayer, self).__init__(player_configuration=player_configuration, avatar=avatar,
+                                            battle_format=battle_format, log_level=log_level,
+                                            max_concurrent_battles=max_concurrent_battles, save_replays=save_replays,
+                                            server_configuration=server_configuration,
+                                            start_timer_on_battle_start=start_timer_on_battle_start,
+                                            start_listening=start_listening,
+                                            ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
+        self.heuristic: Heuristic = heuristic
 
     def choose_move(self, battle):
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
@@ -47,7 +78,7 @@ class MiniMaxPlayer(Player):
 
     def minimax(self, node: BattleStatus, depth: int, is_my_turn: bool) -> tuple[float, BattleStatus]:
         if depth == 0:
-            score = node.compute_score()
+            score = node.compute_score(self.heuristic)
             node.score = score
             return node.score, node
         if is_my_turn:
