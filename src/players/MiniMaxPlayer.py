@@ -50,8 +50,8 @@ class MiniMaxPlayer(Player):
                                           opp_conditions, None, Gen8Move('splash'))
 
         if battle.available_moves:
-            # ris = self.minimax(root_battle_status, 5, True)  # notato che faceva mosse per recuperare vita e basta
-            ris = self.alphabeta(root_battle_status, 5, float('-inf'), float('+inf'), True)
+            # ris = self.minimax(root_battle_status, 2, True)  # notato che faceva mosse per recuperare vita e basta
+            ris = self.alphabeta(root_battle_status, 2, float('-inf'), float('+inf'), True)
             node: BattleStatus = ris[1]
             best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
             if node is not None:
