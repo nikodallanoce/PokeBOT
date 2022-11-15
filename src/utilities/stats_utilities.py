@@ -1,5 +1,6 @@
 from poke_env.environment import Pokemon, Weather, Field, Status, PokemonType, Effect
 from poke_env.data import NATURES
+from typing import Union
 
 STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
 
@@ -24,21 +25,29 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 21, nat
     return estimated_stat
 
 
-def compute_stat_boost(pokemon: Pokemon, stat: str) -> float:
+def compute_stat_boost(pokemon: Pokemon, stat: str, boost: Union[int | None] = None) -> float:
+    if stat not in list(pokemon.base_stats.keys()) and stat not in ["accuracy", "evasion"]:
+        raise ValueError
+
     # The "hp" stat can't have boosts
     if stat == "hp":
         return 1
 
-    if stat not in ["accuracy, evasion"]:
-        if pokemon.boosts[stat] > 0:
-            stat_boost = (2 + pokemon.boosts[stat]) / 2
-        else:
-            stat_boost = 2 / (2 - pokemon.boosts[stat])
+    if boost and -6 <= boost <= 6:
+        boost_to_apply = boost
     else:
-        if pokemon.boosts[stat] > 0:
-            stat_boost = (3 + pokemon.boosts[stat]) / 3
+        boost_to_apply = pokemon.boosts[stat]
+
+    if stat not in ["accuracy, evasion"]:
+        if boost_to_apply > 0:
+            stat_boost = (2 + boost_to_apply) / 2
         else:
-            stat_boost = 3 / (3 - pokemon.boosts[stat])
+            stat_boost = 2 / (2 - boost_to_apply)
+    else:
+        if boost_to_apply > 0:
+            stat_boost = (3 + boost_to_apply) / 3
+        else:
+            stat_boost = 3 / (3 - boost_to_apply)
 
     return round(stat_boost, 2)
 
@@ -76,10 +85,10 @@ def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     return atk_modifier
 
 
-def __compute_def_modifiers(pokemon: Pokemon, terrain: Field = None) -> float:
+def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> float:
     def_modifier = 1
 
-    if pokemon.ability == "grasspelt" and terrain is Field.GRASSY_TERRAIN:
+    if pokemon.ability == "grasspelt" and Field.GRASSY_TERRAIN in terrains:
         def_modifier *= 1.5
 
     if pokemon.ability == "marvelscale" and pokemon.status in STATUS_CONDITIONS:
@@ -135,7 +144,7 @@ def __compute_spd_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     return spd_modifier
 
 
-def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrain: Field = None) -> float:
+def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains: list[Field] = None) -> float:
     spe_modifier = 1
 
     if pokemon.ability == "swiftswim" and weather in [Weather.RAINDANCE, Weather.PRIMORDIALSEA]:
@@ -153,7 +162,7 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrain: 
     if pokemon.ability == "quickfeet" and pokemon.status in STATUS_CONDITIONS:
         spe_modifier *= 1.5
 
-    if pokemon.ability == "surgesurfer" and terrain is Field.ELECTRIC_TERRAIN:
+    if pokemon.ability == "surgesurfer" and Field.ELECTRIC_TERRAIN in terrains:
         spe_modifier *= 2
 
     if pokemon.item == "choicescarf":
@@ -207,18 +216,18 @@ def __compute_evasion_modifiers(pokemon: Pokemon, weather: Weather = None) -> fl
     return evasion_modifier
 
 
-def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None, terrain: Field = None) -> float:
+def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None, terrains: list[Field] = None) -> float:
     match stat:
         case "atk":
             return __compute_atk_modifiers(pokemon, weather)
         case "def":
-            return __compute_def_modifiers(pokemon, terrain)
+            return __compute_def_modifiers(pokemon, terrains)
         case "spa":
             return __compute_spa_modifiers(pokemon, weather)
         case "spd":
             return __compute_spd_modifiers(pokemon, weather)
         case "spe":
-            return __compute_spe_modifiers(pokemon, weather, terrain)
+            return __compute_spe_modifiers(pokemon, weather, terrains)
         case "accuracy":
             return __compute_accuracy_modifiers(pokemon)
         case "evasion":
@@ -230,18 +239,32 @@ def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None,
 def compute_stat(pokemon: Pokemon,
                  stat: str,
                  weather: Weather = None,
-                 terrain: Field = None,
+                 terrains: list[Field] = None,
                  is_bot: bool = False,
                  ivs: int = 31,
                  evs: int = 21,
                  nature: str = "Neutral") -> int:
-    if is_bot:
+    if is_bot and stat != "hp":
         stat_value = pokemon.stats[stat]
     else:
         stat_value = estimate_stat(pokemon, stat, ivs, evs, nature)
 
-    modifiers = compute_stat_modifiers(pokemon, stat, weather, terrain)
+    modifiers = compute_stat_modifiers(pokemon, stat, weather, terrains)
     boost = compute_stat_boost(pokemon, stat)
     stat_value *= modifiers
     stat_value *= boost
-    return stat_value
+    return int(stat_value)
+
+
+def stats_to_string(pokemon: Pokemon,
+                    stats: list[str],
+                    weather: Weather = None,
+                    terrains: list[Field] = None,
+                    is_bot: bool = False) -> str:
+    stats_string = ""
+    for i, stat in enumerate(stats):
+        stats_string += "{0:3}: {1:3}".format(stat, str(compute_stat(pokemon, stat, weather, terrains, is_bot)))
+        if i != len(stats) - 1:
+            stats_string += " "
+
+    return stats_string

@@ -1,4 +1,6 @@
 from poke_env.player import Player
+from poke_env.environment import Pokemon, PokemonType
+from typing import Union
 import pandas as pd
 
 
@@ -48,3 +50,25 @@ async def challenge_player(player: Player,
         battles_dict = {"Turns": turns, "Won": results}
         df_ratings = pd.DataFrame(battles_dict)
         df_ratings.to_csv("bot_data/{0}_{1}.csv".format(player_type, player.username))
+
+
+def types_to_string(pokemon_types: Union[Pokemon, tuple[PokemonType, PokemonType | None]]) -> str:
+    if issubclass(type(pokemon_types), Pokemon):
+        types = pokemon_types.types
+    else:
+        types = pokemon_types
+
+    types = [pokemon_type.name for pokemon_type in types if pokemon_type is not None]
+    types = types[0] if len(types) == 1 else "{0}/{1}".format(types[0], types[1])
+    return types
+
+
+def matchups_to_string(matchups: dict[Pokemon, float]) -> str:
+    team = ""
+    for i, team_matchup in enumerate(matchups.items()):
+        team_pokemon, pokemon_matchup = team_matchup
+        team += "{0}: {1}".format(team_pokemon.species, pokemon_matchup)
+        if i != len(matchups) - 1:
+            team += ", "
+
+    return team
