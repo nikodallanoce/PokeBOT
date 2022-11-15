@@ -1,3 +1,4 @@
+from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
 from src.utilities.battle_utilities import *
 from src.utilities.stats_utilities import *
@@ -26,15 +27,8 @@ class BattleStatus:
     def opp_poke_avail_actions(self):
         return self.opp_poke.moves
 
-    def compute_score(self):
-        act_poke_hp = self.act_poke.current_hp
-        opp_poke_hp = self.opp_poke.current_hp
-        if act_poke_hp < 0:
-            act_poke_hp = 0
-        if opp_poke_hp < 0:
-            opp_poke_hp = 0
-        opp_poke_max_hp = estimate_stat(self.opp_poke.pokemon, "hp")
-        score = (act_poke_hp / self.act_poke.pokemon.max_hp) - (opp_poke_hp / opp_poke_max_hp)
+    def compute_score(self, heuristic: Heuristic):
+        score = heuristic.compute(self)
         return score
 
     def simulate_turn(self, move: Move, is_my_turn: bool):
