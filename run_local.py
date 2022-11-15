@@ -9,7 +9,7 @@ from tabulate import tabulate
 
 def parse_arguments(known=False):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--matches", type=int, default=1, help="the number of challenges that the bot will accept")
+    parser.add_argument("--matches", type=int, default=100, help="the number of challenges that the bot will accept")
     parser.add_argument("--concurrency", type=int, default=10, help="max concurrent battles")
     parser.add_argument("--players", type=str, default="MBP,BD",
                         help="the bot's playstyle list: e.g: RB,MBP,MM. Recall MBP MaxBasePower, BD BestDamage, RB RuleBased, MM MiniMax")
