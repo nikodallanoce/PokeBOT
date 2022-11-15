@@ -6,6 +6,7 @@ from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.rulebased_player import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.utilities import challenge_player
+from src.utilities.SimpleHeuristic import SimpleHeuristic
 
 
 def parse_arguments(known=False):
@@ -37,13 +38,13 @@ async def run_bot_online():
 
     player_config = PlayerConfiguration(bot_username, bot_password)
     if playstyle == "MBP":
-        player = MaxBasePowerPlayer(player_config, server_configuration=ShowdownServerConfiguration)
+        player = MaxBasePowerPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "BD":
-        player = BestDamagePlayer(player_config, server_configuration=ShowdownServerConfiguration)
+        player = BestDamagePlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "RB":
-        player = RuleBasedPlayer(player_config, server_configuration=ShowdownServerConfiguration)
+        player = RuleBasedPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "MM":
-        player = MiniMaxPlayer(player_config, server_configuration=ShowdownServerConfiguration)
+        player = MiniMaxPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     else:
         raise ValueError
 

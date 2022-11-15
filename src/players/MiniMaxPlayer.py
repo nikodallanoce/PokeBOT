@@ -9,12 +9,13 @@ from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
 from src.utilities.battle_utilities import *
 from src.utilities.stats_utilities import compute_stat
+from src.utilities.SimpleHeuristic import SimpleHeuristic
 
 
 class MiniMaxPlayer(Player):
 
     def __init__(self,
-                 heuristic: Heuristic,
+                 heuristic: Optional[Heuristic] = SimpleHeuristic(),
                  player_configuration: Optional[PlayerConfiguration] = None,
                  *,
                  avatar: Optional[int] = None,
@@ -49,7 +50,8 @@ class MiniMaxPlayer(Player):
                                           opp_conditions, None, Gen8Move('splash'))
 
         if battle.available_moves:
-            ris = self.minimax(root_battle_status, 2, True)  # notato che faceva mosse per recuperare vita e basta
+            # ris = self.minimax(root_battle_status, 2, True)  # notato che faceva mosse per recuperare vita e basta
+            ris = self.alphabeta(root_battle_status, 2, float('-inf'), float('+inf'), True)
             node: BattleStatus = ris[1]
             best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
             if node is not None:
@@ -103,4 +105,43 @@ class MiniMaxPlayer(Player):
                     ret_node = child_node
                 score = min(score, child_score)
                 node.score = score
+            return score, ret_node
+
+    def alphabeta(self, node: BattleStatus, depth: int, alpha: float, beta: float, is_my_turn: bool) -> tuple[float, BattleStatus]:
+        '''
+        (* Initial call *) alphabeta(origin, depth, −inf, +inf, TRUE)
+        '''
+        if depth == 0:
+            score = node.compute_score(self.heuristic)
+            node.score = score
+            return node.score, node
+        if is_my_turn:
+            score = float('-inf')
+            ret_node = node
+            for poss_act in node.act_poke_avail_actions():
+                new_state = node.simulate_turn(poss_act, is_my_turn)
+                child_score, child_node = self.alphabeta(new_state, depth, alpha, beta, False)
+                if score < child_score:
+                    ret_node = child_node
+                score = max(score, child_score)
+                node.score = score
+
+                if score >= beta:
+                    break  # beta cutoff
+                alpha = max(alpha, score)
+            return score, ret_node
+        else:
+            score = float('inf')
+            ret_node = node
+            for poss_act in node.opp_poke_avail_actions():
+                new_state = node.simulate_turn(poss_act, not is_my_turn)
+                child_score, child_node = self.alphabeta(new_state, depth - 1, alpha, beta, True)
+                if score > child_score:
+                    ret_node = child_node
+                score = min(score, child_score)
+                node.score = score
+
+                if score <= alpha:
+                    break  # alpha cutoff
+                beta = min(beta, score)
             return score, ret_node
