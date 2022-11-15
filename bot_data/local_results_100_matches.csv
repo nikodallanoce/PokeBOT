@@ -1,0 +1,5 @@
+,Player,RuleBased,MaxBasePower,BestDamage,Baseline
+0,RuleBased,None,0.91,0.57,0.58
+1,MaxBasePower,0.09,None,0.14,0.14
+2,BestDamage,0.43,0.86,None,0.58
+3,Baseline,0.42,0.86,0.42,None

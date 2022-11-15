@@ -47,6 +47,8 @@ async def run_bot_online():
     else:
         raise ValueError
 
+    player.verbose = opt_parser.verbose
+
     await challenge_player(player, None, n_matches, False, save_results)
 
 

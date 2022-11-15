@@ -1,6 +1,7 @@
-from poke_env.player import Player
+from poke_env.player import Player, cross_evaluate
 from poke_env.environment import Pokemon, PokemonType
 from typing import Union
+from tabulate import tabulate
 import pandas as pd
 
 
@@ -50,6 +51,22 @@ async def challenge_player(player: Player,
         battles_dict = {"Turns": turns, "Won": results}
         df_ratings = pd.DataFrame(battles_dict)
         df_ratings.to_csv("bot_data/{0}_{1}.csv".format(player_type, player.username))
+
+
+async def evaluate_players_locally(players: list[Player], n_matches: int = 100, save_results: bool = False) -> None:
+    # Let the players challenge each other
+    cross_evaluation = await cross_evaluate(players, n_challenges=n_matches)
+
+    # Show the results
+    players_table = [["-"] + [player.username for player in players]]
+    for p_1, results in cross_evaluation.items():
+        players_table.append([p_1] + [str(cross_evaluation[p_1][p_2]) for p_2 in results])
+
+    print(tabulate(players_table))
+    if save_results:
+        players_table[0][0] = "Player"
+        df_results = pd.DataFrame(players_table[1:], columns=players_table[0])
+        df_results.to_csv("bot_data/local_results_{0}_matches.csv".format(n_matches))
 
 
 def types_to_string(pokemon_types: Union[Pokemon, tuple[PokemonType, PokemonType | None]]) -> str:
