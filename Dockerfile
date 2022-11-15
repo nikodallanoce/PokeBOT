@@ -20,6 +20,7 @@ RUN npm install
 
 RUN apt-get -y install wget python3-pip
 RUN pip3 install poke-env
+RUN pip3 install pandas
 
 #comment
 WORKDIR /root/
