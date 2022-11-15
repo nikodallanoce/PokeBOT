@@ -1,18 +1,19 @@
-import argparse
-import asyncio
-from poke_env.player import cross_evaluate
+from poke_env import PlayerConfiguration
 from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.rulebased_player import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
-from tabulate import tabulate
+from src.utilities.utilities import evaluate_players_locally
+import argparse
+import asyncio
 
 
 def parse_arguments(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument("--matches", type=int, default=100, help="the number of challenges that the bot will accept")
     parser.add_argument("--concurrency", type=int, default=10, help="max concurrent battles")
-    parser.add_argument("--players", type=str, default="MBP,BD",
-                        help="the bot's playstyle list: e.g: RB,MBP,MM. Recall MBP MaxBasePower, BD BestDamage, RB RuleBased, MM MiniMax")
+    parser.add_argument("--players", nargs="+", type=str, default=["BD", "RB"],
+                        help="the playstyles list, MBP MaxBasePower, BD BestDamage, RB RuleBased, MM MiniMax")
+    parser.add_argument("--save", action="store_true", help="save the results into a csv file")
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
@@ -21,32 +22,43 @@ async def run_bot_local():
     opt_parser = parse_arguments()
     n_matches = opt_parser.matches
     max_concurrency = opt_parser.concurrency
-    players_string = opt_parser.players
-    players_list = players_string.split(",")
+    playstyles = opt_parser.players
 
-    players = []
-    for playstyle in players_list:
+    mbp_players = 0
+    bd_players = 0
+    rb_players = 0
+    mm_players = 0
+    players = list()
+
+    for playstyle in playstyles:
         if playstyle == "MBP":
-            player = MaxBasePowerPlayer(max_concurrent_battles=max_concurrency)
+            player_username = "MaxBasePower{0}".format(mbp_players)
+            player = MaxBasePowerPlayer(player_configuration=PlayerConfiguration(player_username, None),
+                                        max_concurrent_battles=max_concurrency)
+            mbp_players += 1
         elif playstyle == "BD":
-            player = BestDamagePlayer(max_concurrent_battles=max_concurrency)
+            player_username = "BestDamage{0}".format(bd_players)
+            player = BestDamagePlayer(player_configuration=PlayerConfiguration(player_username, None),
+                                      max_concurrent_battles=max_concurrency)
+            player.can_switch = True
+            bd_players += 1
         elif playstyle == "RB":
-            player = RuleBasedPlayer(max_concurrent_battles=max_concurrency)
+            player_username = "RuleBased{0}".format(rb_players)
+            player = RuleBasedPlayer(player_configuration=PlayerConfiguration(player_username, None),
+                                     max_concurrent_battles=max_concurrency)
+            rb_players += 1
         elif playstyle == "MM":
-            player = MiniMaxPlayer(max_concurrent_battles=max_concurrency)
+            player_username = "MiniMax{0}".format(mm_players)
+            player = MiniMaxPlayer(player_configuration=PlayerConfiguration(player_username, None),
+                                   max_concurrent_battles=max_concurrency)
+
+            mm_players += 1
         else:
             raise ValueError
+
         players.append(player)
 
-    # Let them challenge each other
-    cross_evaluation = await cross_evaluate(players, n_challenges=n_matches)
-
-    # Display the results
-    table = [["-"] + [p.username for p in players]]
-    for p_1, results in cross_evaluation.items():
-        table.append([p_1] + [str(cross_evaluation[p_1][p_2]) for p_2 in results])
-
-    print(tabulate(table))
+    await evaluate_players_locally(players, n_matches, opt_parser.save)
 
 
 if __name__ == '__main__':
