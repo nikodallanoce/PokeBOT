@@ -55,7 +55,7 @@ class MiniMaxPlayer(Player):
             ret_node = node
             for poss_act in node.act_poke_avail_actions():
                 new_state = node.simulate_turn(poss_act, is_my_turn)
-                child_score, child_node = self.minimax(new_state, depth - 1, False)
+                child_score, child_node = self.minimax(new_state, depth, False)
                 if score < child_score:
                     ret_node = child_node
 
