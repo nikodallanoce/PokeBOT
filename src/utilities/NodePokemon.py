@@ -43,7 +43,7 @@ class NodePokemon:
 
         if moves is None:
             if len(pokemon.moves) == 4:
-                moves = pokemon.moves
+                moves = list(pokemon.moves.values())
             else:
                 moves = self.enrich_moves(list(pokemon.moves.values()))
 
