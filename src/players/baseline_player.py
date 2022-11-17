@@ -1,11 +1,39 @@
 from poke_env.environment import Move, Pokemon
 from poke_env.player import Player
+from poke_env.teambuilder import Teambuilder
+from poke_env import PlayerConfiguration, ServerConfiguration
 from src.utilities.battle_utilities import compute_damage, outspeed_prob, retrieve_battle_status, bot_status_to_string
+from typing import Optional, Union
 
 
 class BestDamagePlayer(Player):
-    verbose = False
-    can_switch = False
+
+    def __init__(self,
+                 player_configuration: Optional[PlayerConfiguration] = None,
+                 *,
+                 avatar: Optional[int] = None,
+                 battle_format: str = "gen8randombattle",
+                 log_level: Optional[int] = None,
+                 max_concurrent_battles: int = 1,
+                 save_replays: Union[bool, str] = False,
+                 server_configuration: Optional[ServerConfiguration] = None,
+                 start_timer_on_battle_start: bool = False,
+                 start_listening: bool = True,
+                 ping_interval: Optional[float] = 20.0,
+                 ping_timeout: Optional[float] = 20.0,
+                 team: Optional[Union[str, Teambuilder]] = None,
+                 verbose: bool = False,
+                 can_switch: bool = False
+                 ):
+        super(BestDamagePlayer, self).__init__(player_configuration=player_configuration, avatar=avatar,
+                                               battle_format=battle_format, log_level=log_level,
+                                               max_concurrent_battles=max_concurrent_battles, save_replays=save_replays,
+                                               server_configuration=server_configuration,
+                                               start_timer_on_battle_start=start_timer_on_battle_start,
+                                               start_listening=start_listening,
+                                               ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
+        self.verbose = verbose
+        self.can_switch = can_switch
 
     def choose_move(self, battle):
         bot_pokemon: Pokemon = battle.active_pokemon
@@ -55,7 +83,30 @@ class BestDamagePlayer(Player):
 
 class MaxBasePowerPlayer(Player):
 
-    verbose = False
+    def __init__(self,
+                 player_configuration: Optional[PlayerConfiguration] = None,
+                 *,
+                 avatar: Optional[int] = None,
+                 battle_format: str = "gen8randombattle",
+                 log_level: Optional[int] = None,
+                 max_concurrent_battles: int = 1,
+                 save_replays: Union[bool, str] = False,
+                 server_configuration: Optional[ServerConfiguration] = None,
+                 start_timer_on_battle_start: bool = False,
+                 start_listening: bool = True,
+                 ping_interval: Optional[float] = 20.0,
+                 ping_timeout: Optional[float] = 20.0,
+                 team: Optional[Union[str, Teambuilder]] = None,
+                 verbose: bool = False
+                 ):
+        super(MaxBasePowerPlayer, self).__init__(player_configuration=player_configuration, avatar=avatar,
+                                                 battle_format=battle_format, log_level=log_level,
+                                                 max_concurrent_battles=max_concurrent_battles,
+                                                 save_replays=save_replays, server_configuration=server_configuration,
+                                                 start_timer_on_battle_start=start_timer_on_battle_start,
+                                                 start_listening=start_listening,
+                                                 ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
+        self.verbose = verbose
 
     def choose_move(self, battle):
         if battle.available_moves:
