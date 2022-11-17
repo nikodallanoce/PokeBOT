@@ -6,7 +6,7 @@ from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.rulebased_player import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.utilities import challenge_player
-from src.utilities.SimpleHeuristic import SimpleHeuristic
+from src.utilities.ShowdownHeuristc import ShowdownHeuristic
 
 
 def parse_arguments(known=False):
@@ -44,7 +44,8 @@ async def run_bot_online():
     elif playstyle == "RB":
         player = RuleBasedPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "MM":
-        player = MiniMaxPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
+        heuristic = ShowdownHeuristic()
+        player = MiniMaxPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration, heuristic=heuristic, max_depth=2)
     else:
         raise ValueError
 
