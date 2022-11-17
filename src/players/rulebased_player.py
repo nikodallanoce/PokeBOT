@@ -1,17 +1,42 @@
 from poke_env.player import Player
+from poke_env.teambuilder import Teambuilder
+from poke_env import PlayerConfiguration, ServerConfiguration
 from src.utilities.battle_utilities import *
 from src.utilities.stats_utilities import compute_stat
 from src.utilities.utilities import matchups_to_string
+from typing import Optional
 import numpy as np
 
 
 class RuleBasedPlayer(Player):
 
-    verbose = False
-    best_stats_pokemon = 0
-    previous_pokemon = None
-    max_team_matchup = -8
-    toxic_turn = 0
+    def __init__(self,
+                 player_configuration: Optional[PlayerConfiguration] = None,
+                 *,
+                 avatar: Optional[int] = None,
+                 battle_format: str = "gen8randombattle",
+                 log_level: Optional[int] = None,
+                 max_concurrent_battles: int = 1,
+                 save_replays: Union[bool, str] = False,
+                 server_configuration: Optional[ServerConfiguration] = None,
+                 start_timer_on_battle_start: bool = False,
+                 start_listening: bool = True,
+                 ping_interval: Optional[float] = 20.0,
+                 ping_timeout: Optional[float] = 20.0,
+                 team: Optional[Union[str, Teambuilder]] = None,
+                 ):
+        super(RuleBasedPlayer, self).__init__(player_configuration=player_configuration, avatar=avatar,
+                                              battle_format=battle_format, log_level=log_level,
+                                              max_concurrent_battles=max_concurrent_battles, save_replays=save_replays,
+                                              server_configuration=server_configuration,
+                                              start_timer_on_battle_start=start_timer_on_battle_start,
+                                              start_listening=start_listening,
+                                              ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
+        self.verbose = False
+        self.best_stats_pokemon = 0
+        self.previous_pokemon = None
+        self.max_team_matchup = -8
+        self.toxic_turn = 0
 
     @staticmethod
     def __type_advantage(attacker: Pokemon, defender: Pokemon) -> float:
