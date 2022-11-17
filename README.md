@@ -65,4 +65,12 @@ RESTORE CHATROOM: staff
 Worker 1 now listening on 0.0.0.0:8000
 Test your server at http://localhost:8000
 ```
-If so, then everything is fine, you can test the various players against each other.
+If so, then everything is fine and you can test the various players against each other by using the following command
+```bash
+python run_local.py --matches 1000 --players BD RB
+```
+As for the ```run_remote.py```, there are some more arguments available:
+- You can choose how many matches to run concurrently by using ```--concurrency```, the default value is 10.
+- The results can be saved inside a csv file by using ```--save```.
+
+Keep in mind that ```--players``` expects a list of players acronyms, those are the same seen in *How to challenge the bot*.

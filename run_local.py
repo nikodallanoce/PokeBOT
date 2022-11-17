@@ -3,7 +3,7 @@ from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.rulebased_player import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.utilities import evaluate_players_locally
-from src.utilities.SimpleHeuristic import SimpleHeuristic
+from src.utilities.ShowdownHeuristc import ShowdownHeuristic
 import argparse
 import asyncio
 
@@ -50,9 +50,9 @@ async def run_bot_local():
             rb_players += 1
         elif playstyle == "MM":
             player_username = "MiniMax{0}".format(mm_players)
-            heuristic = SimpleHeuristic()
+            heuristic = ShowdownHeuristic()
             player = MiniMaxPlayer(player_configuration=PlayerConfiguration(player_username, None),
-                                   max_concurrent_battles=max_concurrency, heuristic=heuristic)
+                                   max_concurrent_battles=max_concurrency, heuristic=heuristic, max_depth=2)
             mm_players += 1
         else:
             raise ValueError

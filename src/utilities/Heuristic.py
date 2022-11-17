@@ -7,5 +7,5 @@ class Heuristic(ABC):
         super(Heuristic, self).__init__()
 
     @abstractmethod
-    def compute(self, battle_node) -> float:
+    def compute(self, battle_node, depth: int) -> float:
         pass
