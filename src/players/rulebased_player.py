@@ -257,7 +257,8 @@ class RuleBasedPlayer(Player):
 
             for move in battle.available_moves:
                 # Compute the move lower and upper bound of the move damage and its power and, possibly, new type
-                damage_dict = compute_damage(move, bot_pokemon, opp_pokemon, weather, terrains, opp_conditions, True)
+                damage_dict = compute_damage(move, bot_pokemon, opp_pokemon, weather, terrains, opp_conditions,
+                                             is_bot=True)
                 power, damage_lb, damage_ub, move_type = damage_dict.values()
 
                 # Compute the accuracy of the move and save it

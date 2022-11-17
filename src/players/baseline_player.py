@@ -46,7 +46,7 @@ class BestDamagePlayer(Player):
 
             best_move: Move = max(battle.available_moves,
                                   key=lambda move: compute_damage(move, bot_pokemon, opp_pokemon, weather,
-                                                                  terrains, opp_conditions, True)["ub"])
+                                                                  terrains, opp_conditions, is_bot=True)["ub"])
             if self.verbose:
                 print("Outspeed probability {0}".format(
                     outspeed_prob(bot_pokemon, opp_pokemon, weather, terrains, False)["outspeed_p"]))
