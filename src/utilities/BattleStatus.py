@@ -27,8 +27,8 @@ class BattleStatus:
     def opp_poke_avail_actions(self):
         return self.opp_poke.moves
 
-    def compute_score(self, heuristic: Heuristic):
-        score = heuristic.compute(self)
+    def compute_score(self, heuristic: Heuristic, depth: int):
+        score = heuristic.compute(self, depth)
         return score
 
     def simulate_turn(self, move: Move, is_my_turn: bool):
