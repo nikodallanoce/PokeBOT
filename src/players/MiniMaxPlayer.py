@@ -16,6 +16,7 @@ class MiniMaxPlayer(Player):
 
     def __init__(self,
                  heuristic: Optional[Heuristic] = SimpleHeuristic(),
+                 max_depth: Optional[int] = 2,
                  player_configuration: Optional[PlayerConfiguration] = None,
                  *,
                  avatar: Optional[int] = None,
@@ -38,6 +39,7 @@ class MiniMaxPlayer(Player):
                                             start_listening=start_listening,
                                             ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
         self.heuristic: Heuristic = heuristic
+        self.max_depth = max_depth
 
     def choose_move(self, battle):
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
@@ -51,7 +53,7 @@ class MiniMaxPlayer(Player):
 
         if battle.available_moves:
             # ris = self.minimax(root_battle_status, 2, True)  # notato che faceva mosse per recuperare vita e basta
-            ris = self.alphabeta(root_battle_status, 2, float('-inf'), float('+inf'), True)
+            ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
             node: BattleStatus = ris[1]
             best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
             if node is not None:
@@ -68,7 +70,7 @@ class MiniMaxPlayer(Player):
                     chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
                     if mo.id == best_move.id:
                         chs_mv += "♦"
-                    # print(chs_mv)
+                    print(chs_mv)
 
                 # print()
 
@@ -78,41 +80,42 @@ class MiniMaxPlayer(Player):
 
         return self.choose_random_move(battle)
 
-    def minimax(self, node: BattleStatus, depth: int, is_my_turn: bool) -> tuple[float, BattleStatus]:
-        if depth == 0:
-            score = node.compute_score(self.heuristic)
-            node.score = score
-            return node.score, node
-        if is_my_turn:
-            score = float('-inf')
-            ret_node = node
-            for poss_act in node.act_poke_avail_actions():
-                new_state = node.simulate_turn(poss_act, is_my_turn)
-                child_score, child_node = self.minimax(new_state, depth, False)
-                if score < child_score:
-                    ret_node = child_node
-
-                score = max(score, child_score)
-                node.score = score
-            return score, ret_node
-        else:
-            score = float('inf')
-            ret_node = node
-            for poss_act in node.opp_poke_avail_actions():
-                new_state = node.simulate_turn(poss_act, not is_my_turn)
-                child_score, child_node = self.minimax(new_state, depth - 1, True)
-                if score > child_score:
-                    ret_node = child_node
-                score = min(score, child_score)
-                node.score = score
-            return score, ret_node
+    # def minimax(self, node: BattleStatus, depth: int, is_my_turn: bool) -> tuple[float, BattleStatus]:
+    #     if depth == 0:
+    #         score = node.compute_score(self.heuristic, depth)
+    #         node.score = score
+    #         return node.score, node
+    #     if is_my_turn:
+    #         score = float('-inf')
+    #         ret_node = node
+    #         for poss_act in node.act_poke_avail_actions():
+    #             new_state = node.simulate_turn(poss_act, is_my_turn)
+    #             child_score, child_node = self.minimax(new_state, depth, False)
+    #             if score < child_score:
+    #                 ret_node = child_node
+    #
+    #             score = max(score, child_score)
+    #             node.score = score
+    #         return score, ret_node
+    #     else:
+    #         score = float('inf')
+    #         ret_node = node
+    #         for poss_act in node.opp_poke_avail_actions():
+    #             new_state = node.simulate_turn(poss_act, not is_my_turn)
+    #             child_score, child_node = self.minimax(new_state, depth - 1, True)
+    #             if score > child_score:
+    #                 ret_node = child_node
+    #             score = min(score, child_score)
+    #             node.score = score
+    #         return score, ret_node
 
     def alphabeta(self, node: BattleStatus, depth: int, alpha: float, beta: float, is_my_turn: bool) -> tuple[float, BattleStatus]:
-        '''
-        (* Initial call *) alphabeta(origin, depth, −inf, +inf, TRUE)
-        '''
-        if depth == 0:
-            score = node.compute_score(self.heuristic)
+        """
+        (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
+        """
+
+        if depth == self.max_depth:
+            score = node.compute_score(self.heuristic, depth)
             node.score = score
             return node.score, node
         if is_my_turn:
@@ -135,7 +138,7 @@ class MiniMaxPlayer(Player):
             ret_node = node
             for poss_act in node.opp_poke_avail_actions():
                 new_state = node.simulate_turn(poss_act, not is_my_turn)
-                child_score, child_node = self.alphabeta(new_state, depth - 1, alpha, beta, True)
+                child_score, child_node = self.alphabeta(new_state, depth + 1, alpha, beta, True)
                 if score > child_score:
                     ret_node = child_node
                 score = min(score, child_score)
