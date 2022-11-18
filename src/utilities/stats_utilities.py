@@ -243,6 +243,7 @@ def compute_stat(pokemon: Pokemon,
                  is_bot: bool = False,
                  ivs: int = 31,
                  evs: int = 21,
+                 boost: int = None,
                  nature: str = "Neutral") -> int:
     if is_bot and stat != "hp":
         stat_value = pokemon.stats[stat]
@@ -250,7 +251,7 @@ def compute_stat(pokemon: Pokemon,
         stat_value = estimate_stat(pokemon, stat, ivs, evs, nature)
 
     modifiers = compute_stat_modifiers(pokemon, stat, weather, terrains)
-    boost = compute_stat_boost(pokemon, stat)
+    boost = compute_stat_boost(pokemon, stat, boost)
     stat_value *= modifiers
     stat_value *= boost
     return int(stat_value)
