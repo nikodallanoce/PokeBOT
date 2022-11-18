@@ -34,12 +34,14 @@ class BattleStatus:
             damage = compute_damage(move, self.act_poke.pokemon, self.opp_poke.pokemon, self.weather, self.terrains,
                                     self.opp_conditions, self.act_poke.boosts, self.opp_poke.boosts, is_my_turn)["lb"]
             updated_hp = self.opp_poke.current_hp - damage
+            if updated_hp <0:
+                print()
 
-            act_boost, opp_boost = self.compute_updated_boosts(move)
+            att_boost, def_boost = self.compute_updated_boosts(self.act_poke, self.opp_poke, move)
 
-            opp_poke = self.opp_poke.clone(current_hp=updated_hp)
-
-            child = BattleStatus(self.act_poke, opp_poke,
+            opp_poke = self.opp_poke.clone(current_hp=updated_hp, boosts=def_boost)
+            act_poke = self.act_poke.clone(boosts=att_boost)
+            child = BattleStatus(act_poke, opp_poke,
                                  self.avail_switches, self.weather, self.terrains,
                                  self.opp_conditions, self, move)
             return child
@@ -47,23 +49,29 @@ class BattleStatus:
         else:
             damage = compute_damage(move, self.opp_poke.pokemon, self.act_poke.pokemon, self.weather, self.terrains,
                                     self.opp_conditions, self.opp_poke.boosts, self.act_poke.boosts, is_my_turn)["ub"]
+            att_boost, def_boost = self.compute_updated_boosts(self.opp_poke, self.act_poke, move)
             updated_hp = self.act_poke.current_hp - damage
-            act_poke = self.act_poke.clone(current_hp=updated_hp)
+            act_poke = self.act_poke.clone(current_hp=updated_hp, boosts=def_boost)
+            opp_poke = self.opp_poke.clone(boosts=att_boost)
+            return BattleStatus(act_poke, opp_poke,
+                                self.avail_switches, self.weather, self.terrains,
+                                self.opp_conditions, self, move)
 
-            return BattleStatus(act_poke, self.opp_poke, self.avail_switches,
-                                self.weather, self.terrains, self.opp_conditions, self, move)
-
-    def compute_updated_boosts(self, move: Move):
-        act_upd_boosts = self.act_poke.boosts.copy()
-        opp_upd_boosts = self.opp_poke.boosts.copy()
-        if move.boosts is not None:
+    @staticmethod
+    def compute_updated_boosts(att_poke: NodePokemon, def_poke: NodePokemon, move: Move):
+        att_upd_boosts = att_poke.boosts.copy()
+        def_upd_boosts = def_poke.boosts.copy()
+        boosts = move.self_boost if move.boosts is None else move.boosts
+        if boosts is not None:
             if move.target == 'self':
-                for stat_boost, boost in move.boosts.items():
-                    updated_stats = compute_stat_boost(self.act_poke.pokemon, stat_boost, boost)
-                    act_upd_boosts[stat_boost] = updated_stats
-            else:
-                for stat_boost, boost in move.boosts.items():
-                    updated_stats = compute_stat_boost(self.opp_poke.pokemon, stat_boost, boost)
-                    opp_upd_boosts[stat_boost] = updated_stats
+                for stat_boost, boost in boosts.items():
+                    # upd_stats = compute_stat_boost(att_poke.pokemon, stat_boost, boost)
+                    att_upd_boosts[stat_boost] += boost
+            elif move.target == 'normal':
+                for stat_boost, boost in boosts.items():
+                    # upd_stats_att = compute_stat_boost(att_poke.pokemon, stat_boost, boost)
+                    # att_upd_boosts[stat_boost] = upd_stats_att
+                    # upd_stats_def = compute_stat_boost(def_poke.pokemon, stat_boost, boost)
+                    def_upd_boosts[stat_boost] += boost
 
-        return act_upd_boosts, opp_upd_boosts
+        return att_upd_boosts, def_upd_boosts
