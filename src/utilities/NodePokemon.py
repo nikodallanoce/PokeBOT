@@ -2,6 +2,7 @@ from poke_env.environment import Pokemon, Battle, Move, MoveCategory, Weather, F
     AbstractBattle
 from poke_env.environment.pokemon_type import PokemonType as pt
 from poke_env.environment.move import Gen8Move
+from src.utilities.stats_utilities import estimate_stat, compute_stat_modifiers, compute_stat_boost
 
 
 class NodePokemon:
@@ -25,44 +26,74 @@ class NodePokemon:
                      pt.WATER: Gen8Move('surf')
                      }
 
-    def __init__(self, pokemon: Pokemon, current_hp: int = None, current_stats: dict[str, int] = None,
-                 status: Status = None, moves: list[Move] = None):
-        self.pokemon = pokemon
+    def __init__(self, pokemon: Pokemon, is_act_poke: bool, current_hp: int = None,
+                 boosts: dict[str, float] = None,
+                 status: Status = None, moves: list[Move] = None, effects: dict = None):
+        self.pokemon: Pokemon = pokemon
+        self.is_act_poke: bool = is_act_poke
 
         if current_hp is None:
             current_hp = pokemon.current_hp
-        self.current_hp = current_hp
+        elif current_hp < 0:
+            current_hp = 0
+        self.current_hp: int = current_hp
+        assert self.current_hp >= 0
 
-        if current_stats is None:
-            current_stats = pokemon.stats
-        self.current_stats = current_stats
+        if boosts is None:
+            boosts = pokemon.boosts
+        self.boosts: dict[str, float] = boosts
 
         if status is None:
             status = pokemon.status
-        self.status = status
+        self.status: Status = status
 
-        if moves is None:
-            if len(pokemon.moves) == 4:
-                moves = list(pokemon.moves.values())
-            else:
-                moves = self.enrich_moves(list(pokemon.moves.values()))
+        if len(moves) == 4 or is_act_poke:
+            self.moves: list[Move] = list(moves)
+        elif not is_act_poke:
+            self.moves: list[Move] = self.enrich_moves(list(moves))
+        assert self.moves is not None
 
-        self.moves = moves
+        if effects is None:
+            effects = pokemon.effects
+        self.effects: dict = effects
+
+    def is_fainted(self):
+        return self.current_hp == 0
 
     def clone_all(self):
-        return NodePokemon(self.pokemon, self.current_hp, self.current_stats.copy(), self.status, self.moves.copy())
+        return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
+                           self.moves.copy(), self.effects.copy())
 
-    def clone(self, current_hp: int = None, current_stats: dict[str, int] = None, status: Status = None,
-              moves: list[Move] = None):
+    def clone(self, is_act_poke: bool = None, current_hp: int = None, boosts: dict[str, float] = None,
+              status: Status = None,
+              moves: list[Move] = None,
+              effects: dict = None):
+        if is_act_poke is None:
+            is_act_poke = self.is_act_poke
         if current_hp is None:
             current_hp = self.current_hp
-        if current_stats is None:
-            current_stats = self.current_stats.copy()
+        if boosts is None:
+            boosts = self.boosts.copy()
         if status is None:
             status = self.status
         if moves is None:
             moves = self.moves.copy()
-        return NodePokemon(self.pokemon, current_hp, current_stats, status, moves)
+        if effects is None:
+            effects = self.effects.copy()
+        return NodePokemon(self.pokemon, is_act_poke, current_hp, boosts, status, moves, effects)
+
+    def retrieve_stats(self, weather: Weather, terrains: list[Field]):
+
+        computed_stats: dict[str, int] = self.pokemon.stats.copy()
+        if not self.is_act_poke:
+            computed_stats = self.pokemon.base_stats.copy()
+            for stat in computed_stats.keys():
+                computed_stats[stat] = estimate_stat(self.pokemon, stat)
+
+        for stat in computed_stats.keys():
+            computed_stats[stat] = int(
+                computed_stats[stat] * compute_stat_modifiers(self.pokemon, stat, weather, terrains))
+            computed_stats[stat] = int(computed_stats[stat] * compute_stat_boost(self.pokemon, stat, self.boosts[stat]))
 
     def enrich_moves(self, known_moves: list[Move]) -> list[Move]:
         moves_added: list[Move] = []

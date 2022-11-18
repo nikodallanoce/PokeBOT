@@ -45,11 +45,12 @@ class MiniMaxPlayer(Player):
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
 
         opp_max_hp = compute_stat(battle.opponent_active_pokemon, "hp", weather, terrains)
-        root_battle_status = BattleStatus(NodePokemon(battle.active_pokemon, moves=battle.available_moves),
-                                          NodePokemon(battle.opponent_active_pokemon, current_hp=opp_max_hp),
-                                          battle.available_moves,
-                                          battle.available_switches, weather, terrains,
-                                          opp_conditions, None, Gen8Move('splash'))
+        root_battle_status = BattleStatus(
+            NodePokemon(battle.active_pokemon, is_act_poke=True, moves=battle.available_moves),
+            NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_max_hp,
+                        moves=list(battle.opponent_active_pokemon.moves.values())),
+            battle.available_switches, weather, terrains,
+            opp_conditions, None, Gen8Move('splash'))
 
         if battle.available_moves:
             # ris = self.minimax(root_battle_status, 2, True)  # notato che faceva mosse per recuperare vita e basta
@@ -66,13 +67,14 @@ class MiniMaxPlayer(Player):
                 for mo in battle.available_moves:
 
                     damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
-                                            terrains, opp_conditions, True)["ub"]
+                                            terrains, opp_conditions, battle.active_pokemon.boosts,
+                                            battle.opponent_active_pokemon.boosts, True)["lb"]
                     chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
                     if mo.id == best_move.id:
                         chs_mv += "♦"
                     print(chs_mv)
 
-                # print()
+                print()
 
             return self.create_order(best_move)
         elif battle.available_switches:
@@ -109,12 +111,12 @@ class MiniMaxPlayer(Player):
     #             node.score = score
     #         return score, ret_node
 
-    def alphabeta(self, node: BattleStatus, depth: int, alpha: float, beta: float, is_my_turn: bool) -> tuple[float, BattleStatus]:
+    def alphabeta(self, node: BattleStatus, depth: int, alpha: float, beta: float, is_my_turn: bool) -> tuple[
+        float, BattleStatus]:
         """
         (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
         """
-
-        if depth == self.max_depth:
+        if depth == self.max_depth or self.is_terminal_node(node):
             score = node.compute_score(self.heuristic, depth)
             node.score = score
             return node.score, node
@@ -122,7 +124,7 @@ class MiniMaxPlayer(Player):
             score = float('-inf')
             ret_node = node
             for poss_act in node.act_poke_avail_actions():
-                new_state = node.simulate_turn(poss_act, is_my_turn)
+                new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth, alpha, beta, False)
                 if score < child_score:
                     ret_node = child_node
@@ -137,7 +139,7 @@ class MiniMaxPlayer(Player):
             score = float('inf')
             ret_node = node
             for poss_act in node.opp_poke_avail_actions():
-                new_state = node.simulate_turn(poss_act, not is_my_turn)
+                new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth + 1, alpha, beta, True)
                 if score > child_score:
                     ret_node = child_node
@@ -148,3 +150,7 @@ class MiniMaxPlayer(Player):
                     break  # alpha cutoff
                 beta = min(beta, score)
             return score, ret_node
+
+    @staticmethod
+    def is_terminal_node(node: BattleStatus):
+        return node.act_poke.is_fainted() or node.opp_poke.is_fainted()
