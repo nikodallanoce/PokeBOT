@@ -116,9 +116,7 @@ class MiniMaxPlayer(Player):
         """
         (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
         """
-        if self.is_terminal_node(node):
-            print()
-        if depth == self.max_depth or self.is_terminal_node(node):
+        if depth == self.max_depth or self.is_terminal_node():
             score = node.compute_score(self.heuristic, depth)
             node.score = score
             return node.score, node
@@ -153,5 +151,6 @@ class MiniMaxPlayer(Player):
                 beta = min(beta, score)
             return score, ret_node
 
-    def is_terminal_node(self, node: BattleStatus):
+    @staticmethod
+    def is_terminal_node(node: BattleStatus):
         return node.act_poke.is_fainted() or node.opp_poke.is_fainted()
