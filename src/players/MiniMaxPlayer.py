@@ -116,7 +116,7 @@ class MiniMaxPlayer(Player):
         """
         (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
         """
-        if depth == self.max_depth or self.is_terminal_node():
+        if depth == self.max_depth or self.is_terminal_node(node):
             score = node.compute_score(self.heuristic, depth)
             node.score = score
             return node.score, node
