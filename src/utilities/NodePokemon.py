@@ -2,7 +2,7 @@ from poke_env.environment import Pokemon, Battle, Move, MoveCategory, Weather, F
     AbstractBattle
 from poke_env.environment.pokemon_type import PokemonType as pt
 from poke_env.environment.move import Gen8Move
-from stats_utilities import *
+from src.utilities.stats_utilities import estimate_stat, compute_stat_modifiers, compute_stat_boost
 
 
 class NodePokemon:
@@ -27,33 +27,35 @@ class NodePokemon:
                      }
 
     def __init__(self, pokemon: Pokemon, is_act_poke: bool, current_hp: int = None,
-                 boosts: dict[str, int] = None,
+                 boosts: dict[str, float] = None,
                  status: Status = None, moves: list[Move] = None, effects: dict = None):
-        self.pokemon = pokemon
-        self.is_act_poke = is_act_poke
+        self.pokemon: Pokemon = pokemon
+        self.is_act_poke: bool = is_act_poke
 
         if current_hp is None:
             current_hp = pokemon.current_hp
         elif current_hp < 0:
             current_hp = 0
-        self.current_hp = current_hp
+        self.current_hp: int = current_hp
+        assert self.current_hp >= 0
 
         if boosts is None:
             boosts = pokemon.boosts
-        self.boosts = boosts
+        self.boosts: dict[str, float] = boosts
 
         if status is None:
             status = pokemon.status
-        self.status = status
+        self.status: Status = status
 
         if len(moves) == 4 or is_act_poke:
-            self.moves = list(moves)
+            self.moves: list[Move] = list(moves)
         elif not is_act_poke:
-            self.moves = self.enrich_moves(list(moves))
+            self.moves: list[Move] = self.enrich_moves(list(moves))
         assert self.moves is not None
 
         if effects is None:
-            self.effects = pokemon.effects
+            effects = pokemon.effects
+        self.effects: dict = effects
 
     def is_fainted(self):
         return self.current_hp == 0
@@ -62,7 +64,7 @@ class NodePokemon:
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
                            self.moves.copy(), self.effects.copy())
 
-    def clone(self, is_act_poke: bool = None, current_hp: int = None, boosts: dict[str, int] = None,
+    def clone(self, is_act_poke: bool = None, current_hp: int = None, boosts: dict[str, float] = None,
               status: Status = None,
               moves: list[Move] = None,
               effects: dict = None):
@@ -78,7 +80,7 @@ class NodePokemon:
             moves = self.moves.copy()
         if effects is None:
             effects = self.effects.copy()
-            return NodePokemon(self.pokemon, is_act_poke, current_hp, boosts, status, moves, effects)
+        return NodePokemon(self.pokemon, is_act_poke, current_hp, boosts, status, moves, effects)
 
     def retrieve_stats(self, weather: Weather, terrains: list[Field]):
 

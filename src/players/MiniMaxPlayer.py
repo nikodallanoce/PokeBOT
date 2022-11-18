@@ -67,13 +67,14 @@ class MiniMaxPlayer(Player):
                 for mo in battle.available_moves:
 
                     damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
-                                            terrains, opp_conditions, True)["ub"]
+                                            terrains, opp_conditions, battle.active_pokemon.boosts,
+                                            battle.opponent_active_pokemon.boosts, True)["ub"]
                     chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
                     if mo.id == best_move.id:
                         chs_mv += "♦"
                     print(chs_mv)
 
-                # print()
+                print()
 
             return self.create_order(best_move)
         elif battle.available_switches:
@@ -115,8 +116,7 @@ class MiniMaxPlayer(Player):
         """
         (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
         """
-
-        if depth == self.max_depth:
+        if depth == self.max_depth or self.is_terminal_node(node):
             score = node.compute_score(self.heuristic, depth)
             node.score = score
             return node.score, node
@@ -139,7 +139,7 @@ class MiniMaxPlayer(Player):
             score = float('inf')
             ret_node = node
             for poss_act in node.opp_poke_avail_actions():
-                new_state = node.simulate_action(poss_act, not is_my_turn)
+                new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth + 1, alpha, beta, True)
                 if score > child_score:
                     ret_node = child_node
@@ -150,3 +150,6 @@ class MiniMaxPlayer(Player):
                     break  # alpha cutoff
                 beta = min(beta, score)
             return score, ret_node
+
+    def is_terminal_node(self, node: BattleStatus):
+        return node.act_poke.is_fainted() or node.opp_poke.is_fainted()
