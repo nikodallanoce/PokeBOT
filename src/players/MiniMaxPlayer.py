@@ -68,7 +68,7 @@ class MiniMaxPlayer(Player):
 
                     damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
                                             terrains, opp_conditions, battle.active_pokemon.boosts,
-                                            battle.opponent_active_pokemon.boosts, True)["ub"]
+                                            battle.opponent_active_pokemon.boosts, True)["lb"]
                     chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
                     if mo.id == best_move.id:
                         chs_mv += "♦"
@@ -116,6 +116,8 @@ class MiniMaxPlayer(Player):
         """
         (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
         """
+        if self.is_terminal_node(node):
+            print()
         if depth == self.max_depth or self.is_terminal_node(node):
             score = node.compute_score(self.heuristic, depth)
             node.score = score
