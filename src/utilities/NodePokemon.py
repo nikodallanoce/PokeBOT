@@ -34,6 +34,8 @@ class NodePokemon:
 
         if current_hp is None:
             current_hp = pokemon.current_hp
+        elif current_hp < 0:
+            current_hp = 0
         self.current_hp = current_hp
 
         if boosts is None:
@@ -52,6 +54,9 @@ class NodePokemon:
 
         if effects is None:
             self.effects = pokemon.effects
+
+    def is_fainted(self):
+        return self.current_hp == 0
 
     def clone_all(self):
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
