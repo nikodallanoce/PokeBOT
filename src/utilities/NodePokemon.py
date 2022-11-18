@@ -27,7 +27,7 @@ class NodePokemon:
                      }
 
     def __init__(self, pokemon: Pokemon, is_act_poke: bool, current_hp: int = None,
-                 boosts: dict[str, float] = None,
+                 boosts: dict[str, int] = None,
                  status: Status = None, moves: list[Move] = None, effects: dict = None):
         self.pokemon: Pokemon = pokemon
         self.is_act_poke: bool = is_act_poke
@@ -41,7 +41,7 @@ class NodePokemon:
 
         if boosts is None:
             boosts = pokemon.boosts
-        self.boosts: dict[str, float] = boosts
+        self.boosts: dict[str, int] = boosts
 
         if status is None:
             status = pokemon.status
@@ -64,7 +64,7 @@ class NodePokemon:
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
                            self.moves.copy(), self.effects.copy())
 
-    def clone(self, is_act_poke: bool = None, current_hp: int = None, boosts: dict[str, float] = None,
+    def clone(self, is_act_poke: bool = None, current_hp: int = None, boosts: dict[str, int] = None,
               status: Status = None,
               moves: list[Move] = None,
               effects: dict = None):
