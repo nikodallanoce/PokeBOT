@@ -398,6 +398,8 @@ def compute_damage(move: Move,
                    weather: Weather = None,
                    terrains: list[Field] = None,
                    defender_conditions: list[SideCondition] = None,
+                   attacker_boosts: dict[str, int] = None,
+                   defender_boosts: dict[str, int] = None,
                    is_bot: bool = False,
                    verbose: bool = False) -> dict[str, Union[int | PokemonType]]:
     # Change the move type if some abilities have such effect
@@ -463,10 +465,12 @@ def compute_damage(move: Move,
     defender_stat["value"] *= compute_stat_modifiers(defender, defender_stat["stat"], weather, terrains)
 
     if defender.ability != "unaware":
-        attacker_stat["value"] *= compute_stat_boost(attacker, attacker_stat["stat"])
+        boost = attacker_boosts[attacker_stat["stat"]] if attacker_boosts else attacker.boosts[attacker_stat["stat"]]
+        attacker_stat["value"] *= compute_stat_boost(attacker, attacker_stat["stat"], boost)
 
     if attacker.ability != "unaware":
-        defender_stat["value"] *= compute_stat_boost(defender, defender_stat["stat"])
+        boost = defender_boosts[defender_stat["stat"]] if defender_boosts else defender.boosts[defender_stat["stat"]]
+        defender_stat["value"] *= compute_stat_boost(defender, defender_stat["stat"], boost)
 
     ratio_attack_defense = int(attacker_stat["value"]) / int(defender_stat["value"])
     if verbose:
@@ -579,11 +583,12 @@ def outspeed_prob(bot_pokemon: Pokemon,
                   opp_pokemon: Pokemon,
                   weather: Weather = None,
                   terrains: list[Field] = None,
+                  boost: int = None,
                   verbose: bool = False) -> dict[str, float]:
     # Compute the stats for both pokémon
-    bot_spe = compute_stat(bot_pokemon, "spe", weather, terrains, True)
-    opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, evs=0)
-    opp_spe_ub = compute_stat(opp_pokemon, "spe", weather, terrains, evs=63)
+    bot_spe = compute_stat(bot_pokemon, "spe", weather, terrains, True, boost=boost)
+    opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, evs=0, boost=boost)
+    opp_spe_ub = compute_stat(opp_pokemon, "spe", weather, terrains, evs=63, boost=boost)
     if verbose:
         print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_spe, opp_pokemon.species,
                                                       opp_spe_lb, opp_spe_ub))
@@ -608,6 +613,8 @@ def compute_move_accuracy(move: Move,
                           defender: Pokemon,
                           weather: Weather = None,
                           terrains: list[Field] = None,
+                          attacker_accuracy_boost: int = None,
+                          defender_evasion_boost: int = None,
                           verbose: bool = False) -> float:
     # Some moves can't miss
     if move.accuracy is True or attacker.is_dynamaxed:
@@ -623,11 +630,11 @@ def compute_move_accuracy(move: Move,
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
             accuracy = 0.5
         elif weather in [Weather.RAINDANCE, Weather.PRIMORDIALSEA]:
-            accuracy = 1
+            return 1
 
     # The move "blizzard" has an accuracy of 1 if the weather is hail
     if move.id == "blizzard" and weather is Weather.HAIL:
-        accuracy = 1
+        return 1
 
     # One-hit KO moves have their accuracy boosted by the difference between the attacker and defender levels
     if move.id in ["fissure", "guillotine", "horndrill", "sheercold"]:
@@ -647,8 +654,8 @@ def compute_move_accuracy(move: Move,
     evasion = compute_stat_modifiers(defender, "evasion", weather, terrains)
 
     # Compute boosts to the previous stats
-    accuracy *= compute_stat_boost(attacker, "accuracy")
-    evasion *= compute_stat_boost(defender, "evasion")
+    accuracy *= compute_stat_boost(attacker, "accuracy", attacker_accuracy_boost)
+    evasion *= compute_stat_boost(defender, "evasion", defender_evasion_boost)
 
     # Compute move accuracy
     move_accuracy = accuracy / evasion

@@ -257,7 +257,8 @@ class RuleBasedPlayer(Player):
 
             for move in battle.available_moves:
                 # Compute the move lower and upper bound of the move damage and its power and, possibly, new type
-                damage_dict = compute_damage(move, bot_pokemon, opp_pokemon, weather, terrains, opp_conditions, True)
+                damage_dict = compute_damage(move, bot_pokemon, opp_pokemon, weather, terrains, opp_conditions,
+                                             is_bot=True)
                 power, damage_lb, damage_ub, move_type = damage_dict.values()
 
                 # Compute the accuracy of the move and save it
@@ -318,7 +319,7 @@ class RuleBasedPlayer(Player):
                     return self.create_order(Gen8Move("firstimpression"))
 
             # If the current pokémon outspeeds the opponent's pokémon, then deal the final hit if possible
-            if outspeed_p >= 0.95 and max_damage > opp_hp:
+            if (outspeed_p >= 0.95 or opp_damage / bot_hp < 0.3) and max_damage > opp_hp:
                 if self.verbose:
                     print("\nChosen move: {0}\n{1}".format(best_damage_move.id, "-" * 110))
 
