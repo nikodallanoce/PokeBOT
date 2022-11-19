@@ -43,73 +43,56 @@ class MiniMaxPlayer(Player):
 
     def choose_move(self, battle):
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
-
         opp_max_hp = compute_stat(battle.opponent_active_pokemon, "hp", weather, terrains)
         root_battle_status = BattleStatus(
             NodePokemon(battle.active_pokemon, is_act_poke=True, moves=battle.available_moves),
             NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_max_hp,
                         moves=list(battle.opponent_active_pokemon.moves.values())),
-            battle.available_switches, weather, terrains,
+            battle.available_switches, battle.weather, terrains,
             opp_conditions, None, Gen8Move('splash'))
 
         if battle.available_moves:
-            # ris = self.minimax(root_battle_status, 2, True)  # notato che faceva mosse per recuperare vita e basta
             ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
             node: BattleStatus = ris[1]
             best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
+
             if node is not None:
                 best_move = node.move  # self.choose_random_move(battle)
                 curr_node = node
                 while curr_node.ancestor is not None:
                     best_move = curr_node.move
                     curr_node = curr_node.ancestor
+                if isinstance(best_move, Move):
+                    for mo in battle.available_moves:
 
-                for mo in battle.available_moves:
+                        damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
+                                                terrains, opp_conditions, battle.active_pokemon.boosts,
+                                                battle.opponent_active_pokemon.boosts, True)["lb"]
+                        chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
+                        if mo.id == best_move.id:
+                            chs_mv += "♦"
+                        #print(chs_mv)
+                else:
+                    chs_mv = best_move
+                    #print(chs_mv)
 
-                    damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
-                                            terrains, opp_conditions, battle.active_pokemon.boosts,
-                                            battle.opponent_active_pokemon.boosts, True)["lb"]
-                    chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
-                    if mo.id == best_move.id:
-                        chs_mv += "♦"
-                    print(chs_mv)
-
-                print()
+                #print()
 
             return self.create_order(best_move)
         elif battle.available_switches:
-            return self.create_order(battle.available_switches[0])
+            ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
+            node: BattleStatus = ris[1]
+            best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
+
+            if node is not None:
+                best_move = node.move  # self.choose_random_move(battle)
+                curr_node = node
+                while curr_node.ancestor is not None:
+                    best_move = curr_node.move
+                    curr_node = curr_node.ancestor
+            return self.create_order(best_move)  # self.create_order(battle.available_switches[0])
 
         return self.choose_random_move(battle)
-
-    # def minimax(self, node: BattleStatus, depth: int, is_my_turn: bool) -> tuple[float, BattleStatus]:
-    #     if depth == 0:
-    #         score = node.compute_score(self.heuristic, depth)
-    #         node.score = score
-    #         return node.score, node
-    #     if is_my_turn:
-    #         score = float('-inf')
-    #         ret_node = node
-    #         for poss_act in node.act_poke_avail_actions():
-    #             new_state = node.simulate_turn(poss_act, is_my_turn)
-    #             child_score, child_node = self.minimax(new_state, depth, False)
-    #             if score < child_score:
-    #                 ret_node = child_node
-    #
-    #             score = max(score, child_score)
-    #             node.score = score
-    #         return score, ret_node
-    #     else:
-    #         score = float('inf')
-    #         ret_node = node
-    #         for poss_act in node.opp_poke_avail_actions():
-    #             new_state = node.simulate_turn(poss_act, not is_my_turn)
-    #             child_score, child_node = self.minimax(new_state, depth - 1, True)
-    #             if score > child_score:
-    #                 ret_node = child_node
-    #             score = min(score, child_score)
-    #             node.score = score
-    #         return score, ret_node
 
     def alphabeta(self, node: BattleStatus, depth: int, alpha: float, beta: float, is_my_turn: bool) -> tuple[
         float, BattleStatus]:
@@ -153,4 +136,4 @@ class MiniMaxPlayer(Player):
 
     @staticmethod
     def is_terminal_node(node: BattleStatus):
-        return node.act_poke.is_fainted() or node.opp_poke.is_fainted()
+        return len(node.act_poke_avail_actions()) == 0 or node.opp_poke.is_fainted()

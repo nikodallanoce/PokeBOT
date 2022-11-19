@@ -47,7 +47,7 @@ class NodePokemon:
             status = pokemon.status
         self.status: Status = status
 
-        if len(moves) == 4 or is_act_poke:
+        if is_act_poke or len(moves) == 4:
             self.moves: list[Move] = list(moves)
         elif not is_act_poke:
             self.moves: list[Move] = self.enrich_moves(list(moves))
