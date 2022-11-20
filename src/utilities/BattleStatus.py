@@ -28,7 +28,7 @@ class BattleStatus:
         return all_actions
 
     def opp_poke_avail_actions(self):
-        all_moves = []
+        all_moves = list[Move | Pokemon]
         if not self.act_poke.is_fainted():
             all_moves = self.opp_poke.moves
         return all_moves

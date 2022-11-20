@@ -51,48 +51,37 @@ class MiniMaxPlayer(Player):
             battle.available_switches, battle.weather, terrains,
             opp_conditions, None, Gen8Move('splash'))
 
-        if battle.available_moves:
-            ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
-            node: BattleStatus = ris[1]
-            best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
+        best_move = self.get_best_move(battle, root_battle_status)
+        return self.create_order(best_move)
 
-            if node is not None:
-                best_move = node.move  # self.choose_random_move(battle)
-                curr_node = node
-                while curr_node.ancestor is not None:
-                    best_move = curr_node.move
-                    curr_node = curr_node.ancestor
-                if isinstance(best_move, Move):
-                    for mo in battle.available_moves:
+    @staticmethod
+    def print_chosen_move(battle, best_move, opp_conditions, terrains, weather):
+        if isinstance(best_move, Move):
+            for mo in battle.available_moves:
+                damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
+                                        terrains, opp_conditions, battle.active_pokemon.boosts,
+                                        battle.opponent_active_pokemon.boosts, True)["lb"]
+                chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
+                if mo.id == best_move.id:
+                    chs_mv += "♦"
+                print(chs_mv)
+        elif isinstance(best_move, Pokemon):
+            chs_mv = best_move
+            print(chs_mv)
 
-                        damage = compute_damage(mo, battle.active_pokemon, battle.opponent_active_pokemon, weather,
-                                                terrains, opp_conditions, battle.active_pokemon.boosts,
-                                                battle.opponent_active_pokemon.boosts, True)["lb"]
-                        chs_mv = mo.id + " : " + mo.type.name + " dmg: " + str(damage)
-                        if mo.id == best_move.id:
-                            chs_mv += "♦"
-                        #print(chs_mv)
-                else:
-                    chs_mv = best_move
-                    #print(chs_mv)
+        print()
 
-                #print()
-
-            return self.create_order(best_move)
-        elif battle.available_switches:
-            ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
-            node: BattleStatus = ris[1]
-            best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
-
-            if node is not None:
-                best_move = node.move  # self.choose_random_move(battle)
-                curr_node = node
-                while curr_node.ancestor is not None:
-                    best_move = curr_node.move
-                    curr_node = curr_node.ancestor
-            return self.create_order(best_move)  # self.create_order(battle.available_switches[0])
-
-        return self.choose_random_move(battle)
+    def get_best_move(self, battle, root_battle_status):
+        ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
+        node: BattleStatus = ris[1]
+        best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
+        if node is not None and node.move != Gen8Move('splash'):
+            best_move = node.move  # self.choose_random_move(battle)
+            curr_node = node
+            while curr_node.ancestor is not None:
+                best_move = curr_node.move
+                curr_node = curr_node.ancestor
+        return best_move
 
     def alphabeta(self, node: BattleStatus, depth: int, alpha: float, beta: float, is_my_turn: bool) -> tuple[
         float, BattleStatus]:
