@@ -2,29 +2,12 @@ from poke_env.environment import Pokemon, Battle, Move, MoveCategory, Weather, F
     AbstractBattle
 from poke_env.environment.pokemon_type import PokemonType as pt
 from poke_env.environment.move import Gen8Move
-from src.utilities.stats_utilities import estimate_stat, compute_stat_modifiers, compute_stat_boost
+
+from src.utilities.battle_utilities import DEFAULT_MOVES_IDS
+from src.utilities.stats_utilities import estimate_stat, compute_stat_modifiers, compute_stat_boost, compute_stat
 
 
 class NodePokemon:
-    default_moves = {pt.ROCK: Gen8Move('powergem'),
-                     pt.BUG: Gen8Move('xscissor'),
-                     pt.DARK: Gen8Move('nightslash'),
-                     pt.DRAGON: Gen8Move('dragonpulse'),
-                     pt.ELECTRIC: Gen8Move('thunderbolt'),
-                     pt.FAIRY: Gen8Move('moonblast'),
-                     pt.FIGHTING: Gen8Move('bodypress'),
-                     pt.FIRE: Gen8Move('flamethrower'),
-                     pt.FLYING: Gen8Move('drillpeck'),
-                     pt.GHOST: Gen8Move('moongeistbeam'),
-                     pt.GRASS: Gen8Move('energyball'),
-                     pt.GROUND: Gen8Move('earthquake'),
-                     pt.ICE: Gen8Move('icebeam'),
-                     pt.NORMAL: Gen8Move('bodyslam'),
-                     pt.POISON: Gen8Move('shellsidearm'),
-                     pt.PSYCHIC: Gen8Move('psychic'),
-                     pt.STEEL: Gen8Move('flashcannon'),
-                     pt.WATER: Gen8Move('surf')
-                     }
 
     def __init__(self, pokemon: Pokemon, is_act_poke: bool, current_hp: int = None,
                  boosts: dict[str, int] = None,
@@ -32,8 +15,10 @@ class NodePokemon:
         self.pokemon: Pokemon = pokemon
         self.is_act_poke: bool = is_act_poke
 
-        if current_hp is None:
+        if current_hp is None and is_act_poke:
             current_hp = pokemon.current_hp
+        elif current_hp is None and not is_act_poke:
+            current_hp = estimate_stat(pokemon, 'hp') * pokemon.current_hp_fraction
         elif current_hp < 0:
             current_hp = 0
         self.current_hp: int = current_hp
@@ -105,6 +90,10 @@ class NodePokemon:
                         move_same_poke_type = True
                         break
                 if not move_same_poke_type:
-                    def_move: Gen8Move = self.default_moves[poke_type]
-                    moves_added.append(def_move)
+                    # def_move: Gen8Move = self.default_moves[poke_type]
+                    if self.pokemon.base_stats["atk"] >= self.pokemon.base_stats["spa"]:
+                        moves_added.append(DEFAULT_MOVES_IDS[poke_type][MoveCategory.PHYSICAL])
+                    else:
+                        moves_added.append(DEFAULT_MOVES_IDS[poke_type][MoveCategory.SPECIAL])
+                    #moves_added.append(def_move)
         return moves_added + known_moves
