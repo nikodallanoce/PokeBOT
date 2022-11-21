@@ -1,8 +1,10 @@
 from typing import Optional
 
 from poke_env import PlayerConfiguration, ServerConfiguration
+from poke_env.environment import Battle
 from poke_env.player import Player
 from poke_env.teambuilder import Teambuilder
+from poke_env.environment.status import Status
 
 from src.utilities.BattleStatus import BattleStatus
 from src.utilities.Heuristic import Heuristic
@@ -17,6 +19,7 @@ class MiniMaxPlayer(Player):
     def __init__(self,
                  heuristic: Optional[Heuristic] = SimpleHeuristic(),
                  max_depth: Optional[int] = 2,
+                 verbose: bool = False,
                  player_configuration: Optional[PlayerConfiguration] = None,
                  *,
                  avatar: Optional[int] = None,
@@ -39,20 +42,43 @@ class MiniMaxPlayer(Player):
                                             start_listening=start_listening,
                                             ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
         self.heuristic: Heuristic = heuristic
-        self.max_depth = max_depth
+        self.max_depth: int = max_depth
+        self.verbose: bool = verbose
+        self.best_stats_pokemon: int = 0
 
     def choose_move(self, battle):
+        if battle.turn == 1:
+            self.best_stats_pokemon = max([sum(pokemon.base_stats.values()) for pokemon in battle.team.values()])
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
         opp_max_hp = compute_stat(battle.opponent_active_pokemon, "hp", weather, terrains)
+        opp_team = [poke for poke in battle.opponent_team.values() if poke.status != Status.FNT and not poke.active]
         root_battle_status = BattleStatus(
             NodePokemon(battle.active_pokemon, is_act_poke=True, moves=battle.available_moves),
             NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_max_hp,
                         moves=list(battle.opponent_active_pokemon.moves.values())),
-            battle.available_switches, battle.weather, terrains,
+            battle.available_switches, opp_team, battle.weather, terrains,
             opp_conditions, None, Gen8Move('splash'))
 
         best_move = self.get_best_move(battle, root_battle_status)
-        return self.create_order(best_move)
+        dynamax: bool = False
+        my_team = [poke for poke in list(battle.team.values()) if poke.status != Status.FNT and not poke.active]
+        if battle.can_dynamax:
+            dynamax = self.__should_dynamax(battle.active_pokemon, my_team)
+        if self.verbose: self.print_chosen_move(battle, best_move, opp_conditions, terrains, weather)
+
+        return self.create_order(best_move, dynamax=dynamax)
+
+    def __should_dynamax(self, bot_pokemon: Pokemon, bot_team: list[Pokemon]) -> bool:
+        # If the pokèmon is the last one alive, use the dynamax
+        if len(bot_team) == 0:
+            return True
+
+        # If the current pokèmon is the best one in terms of base stats and the matchup is favorable, then dynamax
+        if sum(bot_pokemon.base_stats.values()) == self.best_stats_pokemon \
+                and bot_pokemon.current_hp_fraction >= 0.65:
+            return True
+
+        return False
 
     @staticmethod
     def print_chosen_move(battle, best_move, opp_conditions, terrains, weather):
@@ -71,7 +97,7 @@ class MiniMaxPlayer(Player):
 
         print()
 
-    def get_best_move(self, battle, root_battle_status):
+    def get_best_move(self, battle: AbstractBattle, root_battle_status: BattleStatus) -> Pokemon | Move:
         ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
         node: BattleStatus = ris[1]
         best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
@@ -91,7 +117,7 @@ class MiniMaxPlayer(Player):
         if depth == self.max_depth or self.is_terminal_node(node):
             score = node.compute_score(self.heuristic, depth)
             node.score = score
-            return node.score, node
+            return score, node
         if is_my_turn:
             score = float('-inf')
             ret_node = node
@@ -124,5 +150,12 @@ class MiniMaxPlayer(Player):
             return score, ret_node
 
     @staticmethod
-    def is_terminal_node(node: BattleStatus):
-        return len(node.act_poke_avail_actions()) == 0 or node.opp_poke.is_fainted()
+    def opponent_loose(node: BattleStatus) -> bool:
+        return node.opp_poke.is_fainted() or len(node.opp_poke_avail_actions()) == 0
+
+    @staticmethod
+    def player_loose(node: BattleStatus) -> bool:
+        return node.act_poke.is_fainted() and len(node.act_poke_avail_actions()) == 0
+
+    def is_terminal_node(self, node: BattleStatus) -> bool:
+        return self.player_loose(node) or self.opponent_loose(node)
