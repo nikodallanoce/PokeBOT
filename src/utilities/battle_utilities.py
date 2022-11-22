@@ -288,6 +288,10 @@ def compute_other_damage_modifiers(move: Move,
             ("levitate" in defender.possible_abilities or Effect.MAGNET_RISE in defender.effects):
         return 0
 
+    # If the defender has the "air baloon" item then it takes no damage from ground-type moves
+    if move_type is PokemonType.GROUND and defender.item == "airballoon":
+        return 0
+
     # Pokémon with the volt absorb ability suffer no damage from electric type moves
     if move_type is PokemonType.ELECTRIC and ("voltabsorb" in defender.possible_abilities
                                               or "motordrive" in defender.possible_abilities
@@ -727,6 +731,36 @@ def compute_healing(pokemon: Pokemon,
     healing = healing if current_hp + healing <= max_hp else max_hp - current_hp
     healing_percentage = round(healing / max_hp, 2)
     return healing, healing_percentage
+
+
+def compute_drain(attacker: Pokemon, move: Move, damage: int) -> (int, float):
+    if not move.drain:
+        return 0, 0
+
+    if not damage:
+        raise ValueError("You should compute the move damage before computing its draining effect.")
+
+    drain = int(damage * move.drain)
+    drain = drain if attacker.current_hp + drain <= attacker.max_hp else attacker.max_hp - attacker.current_hp
+    drain_percentage = round(drain / attacker.max_hp, 2)
+    return drain, drain_percentage
+
+
+def compute_recoil(attacker: Pokemon, move: Move, damage: int) -> int:
+    if not move.recoil or attacker.ability == "magicguard":
+        return 0
+
+    if not damage:
+        raise ValueError("You should compute the move damage before computing its recoil")
+
+    if move.id in ["mindblown", "steelbeam"]:
+        recoil = int(attacker.max_hp / 2)
+    elif move.self_destruct:
+        recoil = attacker.max_hp
+    else:
+        recoil = int(damage * move.recoil)
+
+    return recoil
 
 
 def retrieve_battle_status(battle: AbstractBattle) -> dict:
