@@ -755,6 +755,8 @@ def compute_recoil(attacker: Pokemon, move: Move, damage: int) -> int:
 
     if move.id in ["mindblown", "steelbeam"]:
         recoil = int(attacker.max_hp / 2)
+    elif move.self_destruct:
+        recoil = attacker.max_hp
     else:
         recoil = int(damage * move.recoil)
 
