@@ -31,7 +31,7 @@ class BattleStatus:
 
     def opp_poke_avail_actions(self) -> list[Move | Pokemon]:
         # all_moves = list[Move | Pokemon]
-        all_actions: list[Move | Pokemon] = []# self.opp_team
+        all_actions: list[Move | Pokemon] = []  # self.opp_team
         if not self.opp_poke.is_fainted():
             all_actions = self.opp_poke.moves + all_actions
         return all_actions
@@ -48,12 +48,17 @@ class BattleStatus:
                 damage = self.guess_damage(is_my_turn, move, weather)
 
                 self.weather = self.get_active_weather(move, update_turn=False)
+
                 updated_hp = self.opp_poke.current_hp - damage
 
                 att_boost, def_boost = self.compute_updated_boosts(self.act_poke, self.opp_poke, move)
+                act_poke_upd_hp = self.act_poke.current_hp
+                if move.category is MoveCategory.STATUS and move.heal > 0:
+                    heal, heal_percentage = compute_healing(self.act_poke.pokemon, move, weather, self.terrains, True)
+                    act_poke_upd_hp += heal
 
                 opp_poke = self.opp_poke.clone(current_hp=updated_hp, boosts=def_boost)
-                act_poke = self.act_poke.clone(boosts=att_boost)
+                act_poke = self.act_poke.clone(current_hp=act_poke_upd_hp, boosts=att_boost)
                 opp_team = self.remove_poke_from_switches(opp_poke, self.opp_team)
                 child = BattleStatus(act_poke, opp_poke,
                                      self.avail_switches, opp_team, self.weather, self.terrains,
