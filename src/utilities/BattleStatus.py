@@ -1,3 +1,5 @@
+import math
+
 from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
 from src.utilities.battle_utilities import *
@@ -43,21 +45,22 @@ class BattleStatus:
     def simulate_action(self, move: Move | Pokemon, is_my_turn: bool):
         weather = None if len(self.weather.keys()) == 0 else next(iter(self.weather.keys()))
         if is_my_turn:
-
             if isinstance(move, Move):
                 damage = self.guess_damage(is_my_turn, move, weather)
 
                 self.weather = self.get_active_weather(move, update_turn=False)
-
-                updated_hp = self.opp_poke.current_hp - damage
+                opp_poke_updated_hp = self.opp_poke.current_hp - damage
 
                 att_boost, def_boost = self.compute_updated_boosts(self.act_poke, self.opp_poke, move)
                 act_poke_upd_hp = self.act_poke.current_hp
-                if move.category is MoveCategory.STATUS and move.heal > 0:
-                    heal, heal_percentage = compute_healing(self.act_poke.pokemon, move, weather, self.terrains, True)
-                    act_poke_upd_hp += heal
 
-                opp_poke = self.opp_poke.clone(current_hp=updated_hp, boosts=def_boost)
+                heal, heal_percentage = self.compute_healing(self.act_poke, move, weather, self.terrains)
+                act_poke_upd_hp += heal
+
+                recoil: int = self.compute_recoil(self.act_poke, move, damage)
+                act_poke_upd_hp = act_poke_upd_hp - recoil
+
+                opp_poke = self.opp_poke.clone(current_hp=opp_poke_updated_hp, boosts=def_boost)
                 act_poke = self.act_poke.clone(current_hp=act_poke_upd_hp, boosts=att_boost)
                 opp_team = self.remove_poke_from_switches(opp_poke, self.opp_team)
                 child = BattleStatus(act_poke, opp_poke,
@@ -77,9 +80,16 @@ class BattleStatus:
                     "ub"]
 
                 att_boost, def_boost = self.compute_updated_boosts(self.opp_poke, self.act_poke, move)
-                updated_hp = self.act_poke.current_hp - damage
-                act_poke = self.act_poke.clone(current_hp=updated_hp, boosts=def_boost)
-                opp_poke = self.opp_poke.clone(boosts=att_boost)
+                opp_poke_updated_hp = self.act_poke.current_hp - damage
+
+                act_poke_upd_hp = self.opp_poke.current_hp
+                heal, heal_percentage = self.compute_healing(self.opp_poke, move, weather, self.terrains)
+                act_poke_upd_hp += heal
+                recoil: int = self.compute_recoil(self.opp_poke, move, damage)
+                act_poke_upd_hp = act_poke_upd_hp - recoil
+
+                act_poke = self.act_poke.clone(current_hp=opp_poke_updated_hp, boosts=def_boost)
+                opp_poke = self.opp_poke.clone(current_hp=act_poke_upd_hp, boosts=att_boost)
                 avail_switches = self.remove_poke_from_switches(act_poke, self.avail_switches)
                 self.weather = self.get_active_weather(move, update_turn=True)
 
@@ -128,6 +138,81 @@ class BattleStatus:
         for elem in poke_list:
             cloned_list.append(elem.clone_all())
         return cloned_list
+
+    @staticmethod
+    def compute_recoil(poke: NodePokemon, move: Move, damage: int) -> int:
+        if move.recoil == 0 or poke.pokemon.ability == "magicguard":
+            return 0
+
+        if move.id in ["mindblown", "steelbeam"]:
+            recoil = int(poke.pokemon.max_hp / 2)
+        elif move.self_destruct:
+            recoil = 1000
+        else:
+            recoil = math.ceil(damage * move.recoil)
+
+        return recoil
+
+    @staticmethod
+    def compute_healing(poke: NodePokemon,
+                        move: Move,
+                        weather: Weather = None,
+                        terrains: list[Field] = None) -> (int, float):
+        healing = 0
+        healing_percentage = 0.0
+        if move.category is MoveCategory.STATUS and move.heal > 0:
+            healing = None
+            healing_percentage = 0.5
+            if poke.pokemon.is_dynamaxed or move.id not in HEALING_MOVES:
+                return 0, 0
+
+            max_hp = poke.pokemon.max_hp
+            current_hp = poke.current_hp
+
+            if move.id in ["morningsun", "moonlight", "synthesis"]:
+                if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
+                    healing_percentage = 0.66
+                elif weather in [Weather.RAINDANCE, Weather.PRIMORDIALSEA, Weather.HAIL, Weather.SANDSTORM]:
+                    healing_percentage = 0.25
+
+            # We assume that bot doesn't heal the opponent's pokémon from its status conditions
+            if move.id == "purify" and poke.status not in STATUS_CONDITIONS:
+                return 0, 0
+
+            if move.id == "rest":
+                if Field.ELECTRIC_TERRAIN in terrains or Field.PSYCHIC_TERRAIN in terrains:
+                    return 0, 0
+
+                healing = max_hp - current_hp
+                healing_percentage = round(healing / max_hp, 2)
+                return healing, healing_percentage
+
+            if move.id == "shoreup" and weather is Weather.SANDSTORM:
+                healing_percentage = 0.66
+
+            if move.id == "strengthsap":
+                atk_boost = poke.boosts["atk"]
+                if poke.pokemon.ability == "contrary":
+                    atk_boost = atk_boost + 1 if atk_boost < 6 else 6
+                elif atk_boost == -6:
+                    return 0, 0
+                else:
+                    atk_boost = atk_boost - 1 if atk_boost > -6 else -6
+
+                if poke.is_act_poke:
+                    atk_stat = poke.pokemon.stats["atk"]
+                else:
+                    atk_stat = estimate_stat(poke.pokemon, "atk")
+
+                atk_stat *= compute_stat_modifiers(poke.pokemon, "atk", weather, terrains)
+                healing = int(atk_stat * compute_stat_boost(poke.pokemon, "atk", atk_boost))
+
+            if healing is None:
+                healing = int(max_hp * healing_percentage)
+
+            healing = healing if current_hp + healing <= max_hp else max_hp - current_hp
+            healing_percentage = round(healing / max_hp, 2)
+        return healing, healing_percentage
 
     @staticmethod
     def compute_updated_boosts(att_poke: NodePokemon, def_poke: NodePokemon, move: Move):
