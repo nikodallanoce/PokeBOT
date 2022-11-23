@@ -59,7 +59,7 @@ def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
         atk_modifier *= 1.5
 
     if pokemon.ability == "defeatist" and pokemon.current_hp_fraction <= 0.5:
-        atk_modifier /= 0.5
+        atk_modifier *= 0.5
 
     if pokemon.ability == "guts" and pokemon.status in STATUS_CONDITIONS:
         atk_modifier *= 1.5
