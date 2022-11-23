@@ -121,37 +121,42 @@ class MiniMaxPlayer(Player):
         if is_my_turn:
             score = float('-inf')
             ret_node = node
+            ret_node.score = score
             for poss_act in node.act_poke_avail_actions():
                 new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth, alpha, beta, False)
                 if score < child_score:
                     ret_node = child_node
                 score = max(score, child_score)
-                node.score = score
 
                 if score >= beta:
                     break  # beta cutoff
                 alpha = max(alpha, score)
+            if score == float('-inf'):
+                print("Here +inf")
             return score, ret_node
         else:
             score = float('inf')
             ret_node = node
+            ret_node.score = score
             for poss_act in node.opp_poke_avail_actions():
                 new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth + 1, alpha, beta, True)
                 if score > child_score:
                     ret_node = child_node
                 score = min(score, child_score)
-                node.score = score
+                #ret_node.score = score
 
                 if score <= alpha:
                     break  # alpha cutoff
                 beta = min(beta, score)
+            if score == float('-inf'):
+                print("Here -inf")
             return score, ret_node
 
     @staticmethod
     def opponent_loose(node: BattleStatus) -> bool:
-        return node.opp_poke.is_fainted() or len(node.opp_poke_avail_actions()) == 0
+        return node.opp_poke.is_fainted() and len(node.opp_poke_avail_actions()) == 0
 
     @staticmethod
     def player_loose(node: BattleStatus) -> bool:

@@ -43,7 +43,7 @@ class NodePokemon:
         self.effects: dict = effects
 
     def is_fainted(self):
-        return self.current_hp == 0
+        return self.current_hp <= 0
 
     def clone_all(self):
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
