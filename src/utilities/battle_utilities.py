@@ -67,6 +67,13 @@ DEFAULT_MOVES_IDS = {PokemonType.BUG: {MoveCategory.PHYSICAL: Gen8Move("xscissor
 
 
 def move_changes_type(move: Move, attacker: Pokemon) -> (bool, PokemonType):
+    """
+    Computes the new type of the move if the attacker has an ability or item that changes it.
+
+    :param move: the move under consideration
+    :param attacker: the pokémon
+    :return: Boolean that states if the move has changed type and the new type itself
+    """
     move_type = move.type
     
     # The "normalize" ability changes all move types to normal-type and boosts their power
@@ -104,6 +111,15 @@ def move_changes_type(move: Move, attacker: Pokemon) -> (bool, PokemonType):
 
 
 def move_fixed_damage(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> (bool, int):
+    """
+    Computes the damage dealt by fixed-damage moves.
+
+    :param move: move under consideration
+    :param move_type: move type
+    :param attacker: attacking pokémon
+    :param defender: defending pokémon
+    :return: Boolean that states if the move has a fixed damage and the damage itself
+    """
     fixed_damage = None
 
     # Status moves deal no damage
@@ -143,6 +159,15 @@ def move_fixed_damage(move: Move, move_type: PokemonType, attacker: Pokemon, def
 
 
 def compute_base_power_modifiers(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> float:
+    """
+    Computes the modifiers of a move's base power considering the abilities and items of the active pokémon.
+
+    :param move: move under consideration
+    :param move_type: move type
+    :param attacker: attacking pokémon
+    :param defender: defending pokémon
+    :return: Base power modifier that takes into account abilities and items
+    """
     base_power_modifier = 1
 
     # The power of the move "facade" is double if the user has a status condition
@@ -275,6 +300,17 @@ def compute_other_damage_modifiers(move: Move,
                                    defender: Pokemon,
                                    weather: Weather,
                                    defender_conditions: list[SideCondition]) -> float:
+    """
+    Computes the damage modifier considering various battle parameters.
+
+    :param move: move under consideration
+    :param move_type: move type
+    :param attacker: attacking pokémon
+    :param defender: defending pokémon
+    :param weather: current battle weather
+    :param defender_conditions: conditions on the opponent's side
+    :return: Damage modifier that takes into account every battle parameter
+    """
     damage_modifier = 1
 
     # Pokémon with the water absorb ability suffer no damage from water type moves
@@ -406,6 +442,21 @@ def compute_damage(move: Move,
                    defender_boosts: dict[str, int] = None,
                    is_bot: bool = False,
                    verbose: bool = False) -> dict[str, Union[int | PokemonType]]:
+    """
+    Computes the damage dealt by a move.
+
+    :param move: move under consideration
+    :param attacker: attacking pokémon
+    :param defender: defending pokémon
+    :param weather: current battle weather
+    :param terrains: current terrains on the battle
+    :param defender_conditions: conditions on the opponent's side
+    :param attacker_boosts: attacker's stat boosts
+    :param defender_boosts: defender's stat boosts
+    :param is_bot: whether the bot is the attacking pokémon
+    :param verbose: print infos aobut the damage computation
+    :return: Base power, lower and upper bound of the damage and the new move type
+    """
     # Change the move type if some abilities have such effect
     _, move_type = move_changes_type(move, attacker)
 
@@ -468,6 +519,7 @@ def compute_damage(move: Move,
 
     defender_stat["value"] *= compute_stat_modifiers(defender, defender_stat["stat"], weather, terrains)
 
+    # Pokémon with the "unaware" ability don't care about stats boosts for the opponent
     if defender.ability != "unaware":
         boost = attacker_boosts[attacker_stat["stat"]] if attacker_boosts else attacker.boosts[attacker_stat["stat"]]
         attacker_stat["value"] *= compute_stat_boost(attacker, attacker_stat["stat"], boost)
@@ -589,6 +641,17 @@ def outspeed_prob(bot_pokemon: Pokemon,
                   terrains: list[Field] = None,
                   boost: int = None,
                   verbose: bool = False) -> dict[str, float]:
+    """
+    Computes the probability of outspeeding the opponent's pokémon.
+
+    :param bot_pokemon: bot's active pokémon
+    :param opp_pokemon: opponent's active pokémon
+    :param weather: current battle weather
+    :param terrains: current battle terrains
+    :param boost: bot's pokémon "spe" stat boost
+    :param verbose: print the computations
+    :return: Outspeed probability, lower and upper bound of the opponent's "spe" stat
+    """
     # Compute the stats for both pokémon
     bot_spe = compute_stat(bot_pokemon, "spe", weather, terrains, True, boost=boost)
     opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, evs=0, boost=boost)
@@ -620,8 +683,21 @@ def compute_move_accuracy(move: Move,
                           attacker_accuracy_boost: int = None,
                           defender_evasion_boost: int = None,
                           verbose: bool = False) -> float:
-    # Some moves can't miss
-    if move.accuracy is True or attacker.is_dynamaxed:
+    """
+    Computes the accuracy of a move.
+
+    :param move: move under consideration
+    :param attacker: attacking pokémon
+    :param defender: defending pokémon
+    :param weather: current battle weather
+    :param terrains: current battle terrains
+    :param attacker_accuracy_boost: attacker's "accuracy" stat boost
+    :param defender_evasion_boost: defender's "evasion" stat boost
+    :param verbose: print the computations
+    :return: The accuracy of the move.
+    """
+    # Some moves can't miss by effect of the move itself or the "no guard" ability
+    if move.accuracy is True or attacker.is_dynamaxed or attacker.ability == "noguard":
         if verbose:
             print("Move {0} accuracy: {1}".format(move.id, 1))
 
@@ -675,6 +751,16 @@ def compute_healing(pokemon: Pokemon,
                     weather: Weather = None,
                     terrains: list[Field] = None,
                     is_bot: bool = False) -> (int, float):
+    """
+    Compute the healing dealt by a move.
+
+    :param pokemon: attacking pokémon
+    :param move: move under consideration
+    :param weather: current battle weather
+    :param terrains: current battle terrains
+    :param is_bot: whether the pokémon belongs to the bot's team
+    :return: Healing and healing percentage of the move
+    """
     healing = None
     healing_percentage = 0.5
     if pokemon.is_dynamaxed or move.id not in HEALING_MOVES:
@@ -725,7 +811,7 @@ def compute_healing(pokemon: Pokemon,
         atk_stat *= compute_stat_modifiers(pokemon, "atk", weather, terrains)
         healing = int(atk_stat * compute_stat_boost(pokemon, "atk", atk_boost))
 
-    if not healing:
+    if healing is None:
         healing = int(max_hp * healing_percentage)
 
     healing = healing if current_hp + healing <= max_hp else max_hp - current_hp
@@ -733,30 +819,54 @@ def compute_healing(pokemon: Pokemon,
     return healing, healing_percentage
 
 
-def compute_drain(attacker: Pokemon, move: Move, damage: int) -> (int, float):
-    if not move.drain:
+def compute_drain(pokemon: Pokemon, move: Move, damage: int, is_bot: False) -> (int, float):
+    """
+    Compute the draining effect of a move.
+
+    :param pokemon: attacking pokémon
+    :param move: move under consideration
+    :param damage: damage dealt by the move
+    :param is_bot: whether the pokémon belongs to the bot's team
+    :return: Drain and drain percentage dealt by the move
+    """
+    if move.drain == 0:
         return 0, 0
 
-    if not damage:
-        raise ValueError("You should compute the move damage before computing its draining effect.")
+    if is_bot:
+        max_hp = pokemon.max_hp
+        current_hp = pokemon.current_hp
+    else:
+        max_hp = estimate_stat(pokemon, "hp")
+        current_hp = max_hp * pokemon.current_hp_fraction
 
     drain = int(damage * move.drain)
-    drain = drain if attacker.current_hp + drain <= attacker.max_hp else attacker.max_hp - attacker.current_hp
-    drain_percentage = round(drain / attacker.max_hp, 2)
+    drain = drain if current_hp + drain <= max_hp else max_hp - current_hp
+    drain_percentage = round(drain / max_hp, 2)
     return drain, drain_percentage
 
 
-def compute_recoil(attacker: Pokemon, move: Move, damage: int) -> int:
-    if not move.recoil or attacker.ability == "magicguard":
+def compute_recoil(pokemon: Pokemon, move: Move, damage: int, is_bot: bool = False) -> int:
+    """
+    Computes the recoil dealt by a move.
+
+    :param pokemon: attacking pokémon
+    :param move: move under consideration
+    :param damage: damage dealt by the move
+    :param is_bot: whether the pokémon belongs to the bot's team
+    :return: Recoil dealt by the move.
+    """
+    if move.recoil == 0 or pokemon.ability == "magicguard":
         return 0
 
-    if not damage:
-        raise ValueError("You should compute the move damage before computing its recoil")
+    if is_bot:
+        max_hp = pokemon.max_hp
+    else:
+        max_hp = estimate_stat(pokemon, "hp")
 
     if move.id in ["mindblown", "steelbeam"]:
-        recoil = int(attacker.max_hp / 2)
+        recoil = int(max_hp / 2)
     elif move.self_destruct:
-        recoil = attacker.max_hp
+        recoil = max_hp
     else:
         recoil = int(damage * move.recoil)
 
@@ -764,6 +874,12 @@ def compute_recoil(attacker: Pokemon, move: Move, damage: int) -> int:
 
 
 def retrieve_battle_status(battle: AbstractBattle) -> dict:
+    """
+    Retrieves some infos about the current battle.
+
+    :param battle: battle under consideration
+    :return: Weather, terrains and conditions on both sides
+    """
     # Retrieve weather and terrain
     weather = None if len(battle.weather.keys()) == 0 else next(iter(battle.weather.keys()))
     terrains = list(battle.fields.keys())
@@ -776,6 +892,15 @@ def retrieve_battle_status(battle: AbstractBattle) -> dict:
 
 
 def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: Weather, terrains: list[Field]) -> str:
+    """
+    Builds a string that contains the main infos of a battle turn from the bot's viewpoint.
+
+    :param bot_pokemon: bot's pokémon
+    :param opp_pokemon: opponent's pokémon
+    :param weather: current battle weather
+    :param terrains: current battle terrains
+    :return: String with the most useful infos of the current battle turn
+    """
     bot_max_hp = bot_pokemon.max_hp
     bot_hp = bot_pokemon.current_hp
     opp_max_hp = compute_stat(opp_pokemon, "hp", weather, terrains)
