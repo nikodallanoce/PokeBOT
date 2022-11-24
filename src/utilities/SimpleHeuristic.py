@@ -14,6 +14,6 @@ class SimpleHeuristic(Heuristic):
         # opp_hp = (opp_hp / opp_max_hp) + opp_hp / 1e3
         # score = bot_hp - opp_hp - 0.2 * depth
         score = (bot_hp / battle_node.act_poke.pokemon.max_hp) - 2 * (
-                opp_hp / opp_max_hp)  # - 0.2 * depth
+                opp_hp / opp_max_hp)
 
         return score

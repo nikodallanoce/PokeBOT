@@ -1,3 +1,4 @@
+import math
 from typing import Optional
 
 from poke_env import PlayerConfiguration, ServerConfiguration
@@ -52,30 +53,55 @@ class MiniMaxPlayer(Player):
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
         opp_max_hp = compute_stat(battle.opponent_active_pokemon, "hp", weather, terrains)
         opp_team = [poke for poke in battle.opponent_team.values() if poke.status != Status.FNT and not poke.active]
+        avail_switches = battle.available_switches
+        # if battle.active_pokemon.is_dynamaxed and len(
+        #         battle.available_moves) > 0 and battle.active_pokemon.status is not Status.FNT:
+        #     avail_switches = []
+        available_moves = battle.available_moves
+        available_moves.sort(reverse=True, key=lambda x: int(x.base_power))
         root_battle_status = BattleStatus(
-            NodePokemon(battle.active_pokemon, is_act_poke=True, moves=battle.available_moves),
+            NodePokemon(battle.active_pokemon, is_act_poke=True, moves=available_moves),
             NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_max_hp,
                         moves=list(battle.opponent_active_pokemon.moves.values())),
-            battle.available_switches, opp_team, battle.weather, terrains,
-            opp_conditions, None, Gen8Move('splash'))
+            avail_switches, opp_team, battle.weather, terrains,
+            opp_conditions, None, Gen8Move('splash'), True)
 
-        best_move = self.get_best_move(battle, root_battle_status)
+        can_defeat, best_move = False, Gen8Move('splash')
+        if root_battle_status.move_first and len(battle.available_moves) > 0:
+            can_defeat, best_move = self.hit_if_act_poke_can_outspeed(battle, terrains, opp_max_hp, opp_conditions)
+        if len(battle.available_moves) == 0 or can_defeat is not True:
+            best_move = self.get_best_move(battle, root_battle_status)
         dynamax: bool = False
         my_team = [poke for poke in list(battle.team.values()) if poke.status != Status.FNT and not poke.active]
-        if battle.can_dynamax:
-            dynamax = self.__should_dynamax(battle.active_pokemon, my_team)
+        if battle.can_dynamax and not isinstance(best_move, Pokemon):
+            dynamax = self.should_dynamax(battle.active_pokemon, my_team)
         if self.verbose: self.print_chosen_move(battle, best_move, opp_conditions, terrains, weather)
 
         return self.create_order(best_move, dynamax=dynamax)
 
-    def __should_dynamax(self, bot_pokemon: Pokemon, bot_team: list[Pokemon]) -> bool:
+    def hit_if_act_poke_can_outspeed(self, battle: AbstractBattle, terrains: list[Field], opp_max_hp: int,
+                                     opp_conditions: list) -> tuple[bool, Move]:
+        opp_hp = math.ceil(opp_max_hp * battle.opponent_active_pokemon.current_hp_fraction)
+        for move in battle.available_moves:
+            battle_status = BattleStatus(
+                NodePokemon(battle.active_pokemon, is_act_poke=True, moves=battle.available_moves),
+                NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_hp,
+                            moves=list(battle.opponent_active_pokemon.moves.values())),
+                [], [], battle.weather, terrains,
+                opp_conditions, None, move, True)
+            opp_is_fainted = battle_status.simulate_action(move, True).opp_poke.is_fainted()
+            if opp_is_fainted:
+                return True, move
+        return False, Gen8Move('splash')
+
+    def should_dynamax(self, bot_pokemon: Pokemon, bot_team: list[Pokemon]) -> bool:
         # If the pokèmon is the last one alive, use the dynamax
         if len(bot_team) == 0:
             return True
 
         # If the current pokèmon is the best one in terms of base stats and the matchup is favorable, then dynamax
         if sum(bot_pokemon.base_stats.values()) == self.best_stats_pokemon \
-                and bot_pokemon.current_hp_fraction >= 0.65:
+                and bot_pokemon.current_hp_fraction >= 0.6:
             return True
 
         return False
@@ -121,37 +147,34 @@ class MiniMaxPlayer(Player):
         if is_my_turn:
             score = float('-inf')
             ret_node = node
-            ret_node.score = score
+            # print(str(depth) + " bot -> " + str(node))
             for poss_act in node.act_poke_avail_actions():
                 new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth, alpha, beta, False)
                 if score < child_score:
                     ret_node = child_node
                 score = max(score, child_score)
-
                 if score >= beta:
                     break  # beta cutoff
                 alpha = max(alpha, score)
-            if score == float('-inf'):
-                print("Here +inf")
+
+            # print(str(depth) + " bot -> " + str(ret_node))
             return score, ret_node
         else:
             score = float('inf')
             ret_node = node
-            ret_node.score = score
+            # print(str(depth) + " bot -> " + str(node))
             for poss_act in node.opp_poke_avail_actions():
                 new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth + 1, alpha, beta, True)
                 if score > child_score:
                     ret_node = child_node
                 score = min(score, child_score)
-                #ret_node.score = score
-
                 if score <= alpha:
                     break  # alpha cutoff
                 beta = min(beta, score)
-            if score == float('-inf'):
-                print("Here -inf")
+
+            # print(str(depth) + " opp -> " + str(ret_node))
             return score, ret_node
 
     @staticmethod
