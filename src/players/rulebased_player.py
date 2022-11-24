@@ -297,7 +297,8 @@ class RuleBasedPlayer(Player):
                           .format(move.id, move_type.name, move.category.name, power, damage_lb, damage_ub, accuracy))
 
             # Keep those moves with the max damage
-            max_damage = max([damage_accuracy["damage_lb"] for damage_accuracy in bot_damage_moves.values()])
+            max_damage = max([damage_accuracy["damage_lb"] for move, damage_accuracy in bot_damage_moves.items()
+                              if move.id not in ["selfdestruct", "explosion"]])
             max_damage_moves = {move: bot_move["accuracy"] for move, bot_move in bot_damage_moves.items()
                                 if bot_move["damage_lb"] == max_damage}
 
@@ -318,8 +319,13 @@ class RuleBasedPlayer(Player):
 
                     return self.create_order(Gen8Move("firstimpression"))
 
+            # Use the move "explosion" only if convenient
+            if "explosion" in available_moves_ids and PokemonType.GHOST not in opp_pokemon.types and \
+                    (bot_pokemon.item == "normalgem" or bot_pokemon.current_hp_fraction <= 0.5 and outspeed_p > 0.5):
+                return self.create_order(Gen8Move("explosion"))
+
             # If the current pokémon outspeeds the opponent's pokémon, then deal the final hit if possible
-            if (outspeed_p >= 0.95 or opp_damage / bot_hp < 0.3) and max_damage > opp_hp:
+            if (outspeed_p >= 0.9 or opp_damage / bot_hp < 0.3) and max_damage > opp_hp:
                 if self.verbose:
                     print("\nChosen move: {0}\n{1}".format(best_damage_move.id, "-" * 110))
 
