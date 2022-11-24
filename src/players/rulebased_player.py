@@ -276,7 +276,8 @@ class RuleBasedPlayer(Player):
                             bot_protecting_moves.append(move)
 
                         if move.heal > 0:
-                            heal, heal_percentage = compute_healing(bot_pokemon, move, weather, terrains, True)
+                            heal, heal_percentage = compute_healing(bot_pokemon, opp_pokemon, move,
+                                                                    weather, terrains, True)
                             bot_healing_moves.update({move: {"heal": heal, "heal_percentage": heal_percentage}})
 
                         if move.status and move.target != "self":
@@ -410,7 +411,7 @@ class RuleBasedPlayer(Player):
 
             # We can boost our stats if the matchup is in our favor
             if bot_boost_moves and bot_matchup >= 0 and sum(bot_pokemon.boosts.values()) == 0\
-                    and bot_pokemon.current_hp_fraction >= 0.8 and outspeed_p > 0.5:
+                    and bot_pokemon.current_hp_fraction >= 0.8 and (outspeed_p > 0.5 or opp_damage < bot_hp / 2):
                 if self.verbose:
                     print("\nChosen move: {0}\n{1}".format(bot_boost_moves[0].id, "-" * 110))
 
