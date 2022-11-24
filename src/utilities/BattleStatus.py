@@ -8,12 +8,13 @@ import random
 
 
 class BattleStatus:
+    last_id: int = 0
 
     def __init__(self, act_poke: NodePokemon, opp_poke: NodePokemon,
                  avail_switches: list[Pokemon],
                  opp_team: list[Pokemon],
                  weather: dict[Weather, int], terrains: list[Field], opp_conditions: list[SideCondition], ancestor,
-                 move: Move | Pokemon):
+                 move: Move | Pokemon, poke_switched: bool):
         self.act_poke: NodePokemon = act_poke
         self.opp_poke: NodePokemon = opp_poke
         self.avail_switches: list[Pokemon] = avail_switches
@@ -24,8 +25,18 @@ class BattleStatus:
         self.ancestor: BattleStatus = ancestor
         self.score = 0
         self.move: Move | Pokemon = move
+        self.poke_switched: bool = poke_switched
+        self.move_first = self.can_outspeed(0.5)
+        self.id = self.last_id
+        self.inc_id()
+
+    @classmethod
+    def inc_id(cls):
+        cls.last_id += 1
 
     def act_poke_avail_actions(self) -> list[Move | Pokemon]:
+        # outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon)["outspeed_p"]
+
         all_actions: list[Move | Pokemon] = self.avail_switches
         if not self.act_poke.is_fainted() and len(self.act_poke.moves) > 0:
             all_actions = self.act_poke.moves + all_actions
@@ -54,7 +65,7 @@ class BattleStatus:
                 att_boost, def_boost = self.compute_updated_boosts(self.act_poke, self.opp_poke, move)
                 act_poke_upd_hp = self.act_poke.current_hp
 
-                heal, heal_percentage = self.compute_healing(self.act_poke, move, weather, self.terrains)
+                heal, _ = self.compute_healing(self.act_poke, move, weather, self.terrains)
                 act_poke_upd_hp += heal
 
                 recoil: int = self.compute_recoil(self.act_poke, move, damage)
@@ -65,11 +76,11 @@ class BattleStatus:
                 opp_team = self.remove_poke_from_switches(opp_poke, self.opp_team)
                 child = BattleStatus(act_poke, opp_poke,
                                      self.avail_switches, opp_team, self.weather, self.terrains,
-                                     self.opp_conditions, self, move)
+                                     self.opp_conditions, self, move, False)
             else:
                 child = BattleStatus(NodePokemon(move, True, moves=list(move.moves.values())), self.opp_poke,
                                      self.avail_switches, self.opp_team, self.weather, self.terrains,
-                                     self.opp_conditions, self, move)
+                                     self.opp_conditions, self, move, False)
             return child
 
         else:
@@ -95,12 +106,20 @@ class BattleStatus:
 
                 return BattleStatus(act_poke, opp_poke,
                                     avail_switches, self.opp_team, self.weather, self.terrains,
-                                    self.opp_conditions, self, move)
+                                    self.opp_conditions, self, move, False)
             else:
                 child = BattleStatus(self.act_poke, NodePokemon(move, False, moves=list(move.moves.values())),
                                      self.avail_switches, self.opp_team, self.weather, self.terrains,
-                                     self.opp_conditions, self, move)
+                                     self.opp_conditions, self, move, False)
                 return child
+
+    def can_outspeed(self, threshold: float):
+        if self.poke_switched:
+            weather = None if len(self.weather.keys()) == 0 else next(iter(self.weather.keys()))
+            outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains)[
+                "outspeed_p"]
+            return outspeed_p < threshold
+        return True
 
     @staticmethod
     def remove_poke_from_switches(poke: NodePokemon, team: list[Pokemon]):
@@ -116,6 +135,8 @@ class BattleStatus:
         damage = compute_damage(move, self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains,
                                 self.opp_conditions, self.act_poke.boosts, self.opp_poke.boosts, is_my_turn)["lb"]
         if (move.accuracy is not True) and random.random() > move.accuracy:
+            damage = 0
+        if is_my_turn and not self.move_first:
             damage = 0
         return damage
 
@@ -229,3 +250,10 @@ class BattleStatus:
                     def_upd_boosts[stat_boost] += boost
 
         return att_upd_boosts, def_upd_boosts
+
+    def __str__(self):
+        mv = self.move.species if isinstance(self.move, Pokemon) else str(self.move).split(" ")[0]
+        to_string = "My: " + self.act_poke.pokemon.species + "  opp: " + self.opp_poke.pokemon.species
+        to_string = to_string + "  sc: " + str(round(self.score, 2)) + "  mv: " + mv + "  mf: " + str(
+            self.move_first) + " an: " + str(self.ancestor.id)
+        return to_string

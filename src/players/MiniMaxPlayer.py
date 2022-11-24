@@ -57,7 +57,7 @@ class MiniMaxPlayer(Player):
             NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_max_hp,
                         moves=list(battle.opponent_active_pokemon.moves.values())),
             battle.available_switches, opp_team, battle.weather, terrains,
-            opp_conditions, None, Gen8Move('splash'))
+            opp_conditions, None, Gen8Move('splash'), True)
 
         best_move = self.get_best_move(battle, root_battle_status)
         dynamax: bool = False
@@ -121,37 +121,39 @@ class MiniMaxPlayer(Player):
         if is_my_turn:
             score = float('-inf')
             ret_node = node
-            ret_node.score = score
+            #print(str(depth) + " bot -> " + str(node))
             for poss_act in node.act_poke_avail_actions():
                 new_state = node.simulate_action(poss_act, is_my_turn)
+                # if node.move_first or isinstance(poss_act, Pokemon):
+                #     child_score, child_node = self.alphabeta(new_state, depth, alpha, beta, False)
+                # else:
+                #     child_score, child_node = self.alphabeta(new_state, depth - 1, alpha, beta, False)
                 child_score, child_node = self.alphabeta(new_state, depth, alpha, beta, False)
                 if score < child_score:
                     ret_node = child_node
                 score = max(score, child_score)
-
                 if score >= beta:
                     break  # beta cutoff
                 alpha = max(alpha, score)
-            if score == float('-inf'):
-                print("Here +inf")
+
+            #print(str(depth) + " bot -> " + str(ret_node))
             return score, ret_node
         else:
             score = float('inf')
             ret_node = node
-            ret_node.score = score
+            #print(str(depth) + " bot -> " + str(node))
             for poss_act in node.opp_poke_avail_actions():
                 new_state = node.simulate_action(poss_act, is_my_turn)
                 child_score, child_node = self.alphabeta(new_state, depth + 1, alpha, beta, True)
+                #print(str(depth) + " opp -> " + str(child_node))
                 if score > child_score:
                     ret_node = child_node
                 score = min(score, child_score)
-                #ret_node.score = score
-
                 if score <= alpha:
                     break  # alpha cutoff
                 beta = min(beta, score)
-            if score == float('-inf'):
-                print("Here -inf")
+
+            #print(str(depth) + " opp -> " + str(ret_node))
             return score, ret_node
 
     @staticmethod
