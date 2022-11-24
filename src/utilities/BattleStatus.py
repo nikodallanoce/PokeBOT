@@ -26,7 +26,7 @@ class BattleStatus:
         self.score = 0
         self.move: Move | Pokemon = move
         self.poke_switched: bool = poke_switched
-        self.move_first = self.can_outspeed(0.5)
+        self.move_first = self.can_outspeed(0.8)
         self.id = self.last_id
         self.inc_id()
 
@@ -80,7 +80,7 @@ class BattleStatus:
             else:
                 child = BattleStatus(NodePokemon(move, True, moves=list(move.moves.values())), self.opp_poke,
                                      self.avail_switches, self.opp_team, self.weather, self.terrains,
-                                     self.opp_conditions, self, move, False)
+                                     self.opp_conditions, self, move, True)
             return child
 
         else:
@@ -131,8 +131,8 @@ class BattleStatus:
     def guess_damage(self, is_my_turn, move, weather):
         damage = compute_damage(move, self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains,
                                 self.opp_conditions, self.act_poke.boosts, self.opp_poke.boosts, is_my_turn)["lb"]
-        if (move.accuracy is not True) and random.random() > move.accuracy:
-            damage = 0
+        #if (move.accuracy is not True) and random.random() > move.accuracy:
+        #    damage = 0
         return damage
 
     def get_active_weather(self, move: Move, update_turn: bool):

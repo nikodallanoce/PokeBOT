@@ -4,8 +4,8 @@ from src.utilities.stats_utilities import estimate_stat
 import numpy as np
 
 # Best parameters for now (I made only a very small random search)
-BEST_PARAMETERS = [0.3048524148970088, 0.07135755224709486, 0.2624696979796289, 0.36132033487626747]
-BEST_PENALTY = 0.028120926131773197
+BEST_PARAMETERS = [0.29845110404242714, 0.12477383583753021, 0.18681976327640784, 0.3899552968436348]
+BEST_PENALTY = 0.036475451823316817
 
 
 class TeamHeuristic(Heuristic):
