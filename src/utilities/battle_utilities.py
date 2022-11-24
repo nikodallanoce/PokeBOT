@@ -801,7 +801,7 @@ def compute_healing(attacker: Pokemon,
         healing_percentage = 0.66
 
     if move.id == "strengthsap":
-        # We suppose the target to be the defender
+        # We assume that the target is the defender
         atk_boost = defender.boosts["atk"]
         if defender.ability == "contrary":
             atk_boost = atk_boost + 1 if atk_boost < 6 else 6

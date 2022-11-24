@@ -323,6 +323,9 @@ class RuleBasedPlayer(Player):
             # Use the move "explosion" only if convenient
             if "explosion" in available_moves_ids and PokemonType.GHOST not in opp_pokemon.types and \
                     (bot_pokemon.item == "normalgem" or bot_pokemon.current_hp_fraction <= 0.5 and outspeed_p > 0.5):
+                if self.verbose:
+                    print("\nChosen move: {0}\n{1}".format("explosion", "-" * 110))
+
                 return self.create_order(Gen8Move("explosion"))
 
             # If the current pokémon outspeeds the opponent's pokémon, then deal the final hit if possible
@@ -479,7 +482,7 @@ class RuleBasedPlayer(Player):
 
             # If we can't do enough damage, then switch out if possible
             if max_damage < 50 and battle.available_switches and max_damage < opp_hp \
-                    and bot_matchup < self.max_team_matchup:
+                    and bot_matchup <= self.max_team_matchup:
                 self.previous_pokemon = bot_pokemon
                 if self.verbose:
                     print("\nSwitching to {0}\n{1}".format(best_switch.species, "-" * 110))
