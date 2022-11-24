@@ -44,7 +44,7 @@ class BattleStatus:
 
     def opp_poke_avail_actions(self) -> list[Move | Pokemon]:
         # all_moves = list[Move | Pokemon]
-        all_actions: list[Move | Pokemon] = []  # self.opp_team
+        all_actions: list[Move | Pokemon] = []#self.opp_team
         if not self.opp_poke.is_fainted():
             all_actions = self.opp_poke.moves + all_actions
         return all_actions
@@ -110,21 +110,18 @@ class BattleStatus:
             else:
                 child = BattleStatus(self.act_poke, NodePokemon(move, False, moves=list(move.moves.values())),
                                      self.avail_switches, self.opp_team, self.weather, self.terrains,
-                                     self.opp_conditions, self, move, False)
+                                     self.opp_conditions, self, move, True)
                 return child
 
     def can_outspeed(self, threshold: float):
-        if self.poke_switched:
-            weather = None if len(self.weather.keys()) == 0 else next(iter(self.weather.keys()))
-            outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains)[
-                "outspeed_p"]
-            return outspeed_p < threshold
-        return True
+        weather = None if len(self.weather.keys()) == 0 else next(iter(self.weather.keys()))
+        outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains)[
+            "outspeed_p"]
+        return outspeed_p < threshold
 
     @staticmethod
     def remove_poke_from_switches(poke: NodePokemon, team: list[Pokemon]):
         new_team: list[Pokemon] = team
-
         if poke.is_fainted() and not poke.pokemon.active:
             new_team = team.copy()
             new_team.remove(poke.pokemon)
@@ -135,8 +132,6 @@ class BattleStatus:
         damage = compute_damage(move, self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains,
                                 self.opp_conditions, self.act_poke.boosts, self.opp_poke.boosts, is_my_turn)["lb"]
         if (move.accuracy is not True) and random.random() > move.accuracy:
-            damage = 0
-        if is_my_turn and not self.move_first:
             damage = 0
         return damage
 
