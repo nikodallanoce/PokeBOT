@@ -26,7 +26,7 @@ class BattleStatus:
         self.score = 0
         self.move: Move | Pokemon = move
         self.poke_switched: bool = poke_switched
-        self.move_first = self.can_outspeed(0.5)
+        self.move_first = self.can_outspeed(0.8)
         self.id = self.last_id
         self.inc_id()
 
@@ -37,14 +37,14 @@ class BattleStatus:
     def act_poke_avail_actions(self) -> list[Move | Pokemon]:
         # outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon)["outspeed_p"]
 
-        all_actions: list[Move | Pokemon] = self.avail_switches
+        all_actions: list[Move | Pokemon] = []#self.avail_switches
         if not self.act_poke.is_fainted() and len(self.act_poke.moves) > 0:
             all_actions = self.act_poke.moves + all_actions
         return all_actions
 
     def opp_poke_avail_actions(self) -> list[Move | Pokemon]:
         # all_moves = list[Move | Pokemon]
-        all_actions: list[Move | Pokemon] = []#self.opp_team
+        all_actions: list[Move | Pokemon] = []  # self.opp_team
         if not self.opp_poke.is_fainted():
             all_actions = self.opp_poke.moves + all_actions
         return all_actions
@@ -71,6 +71,10 @@ class BattleStatus:
                 recoil: int = self.compute_recoil(self.act_poke, move, damage)
                 act_poke_upd_hp = act_poke_upd_hp - recoil
 
+                # Compute drain dealt by the move
+                drain, _ = self.compute_drain(self.act_poke, move, damage)
+                act_poke_upd_hp += drain
+
                 opp_poke = self.opp_poke.clone(current_hp=opp_poke_updated_hp, boosts=def_boost)
                 act_poke = self.act_poke.clone(current_hp=act_poke_upd_hp, boosts=att_boost)
                 opp_team = self.remove_poke_from_switches(opp_poke, self.opp_team)
@@ -80,7 +84,7 @@ class BattleStatus:
             else:
                 child = BattleStatus(NodePokemon(move, True, moves=list(move.moves.values())), self.opp_poke,
                                      self.avail_switches, self.opp_team, self.weather, self.terrains,
-                                     self.opp_conditions, self, move, False)
+                                     self.opp_conditions, self, move, True)
             return child
 
         else:
@@ -94,10 +98,12 @@ class BattleStatus:
                 opp_poke_updated_hp = self.act_poke.current_hp - damage
 
                 act_poke_upd_hp = self.opp_poke.current_hp
-                heal, heal_percentage = self.compute_healing(self.opp_poke, move, weather, self.terrains)
+                heal, _ = self.compute_healing(self.opp_poke, move, weather, self.terrains)
                 act_poke_upd_hp += heal
                 recoil: int = self.compute_recoil(self.opp_poke, move, damage)
-                act_poke_upd_hp = act_poke_upd_hp - recoil
+                act_poke_upd_hp -= recoil
+                drain, _ = self.compute_drain(self.act_poke, move, damage)
+                act_poke_upd_hp += drain
 
                 act_poke = self.act_poke.clone(current_hp=opp_poke_updated_hp, boosts=def_boost)
                 opp_poke = self.opp_poke.clone(current_hp=act_poke_upd_hp, boosts=att_boost)
@@ -119,8 +125,7 @@ class BattleStatus:
             "outspeed_p"]
         return outspeed_p < threshold
 
-    @staticmethod
-    def remove_poke_from_switches(poke: NodePokemon, team: list[Pokemon]):
+    def remove_poke_from_switches(self, poke: NodePokemon, team: list[Pokemon]):
         new_team: list[Pokemon] = team
         if poke.is_fainted() and not poke.pokemon.active:
             new_team = team.copy()
@@ -131,8 +136,8 @@ class BattleStatus:
     def guess_damage(self, is_my_turn, move, weather):
         damage = compute_damage(move, self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains,
                                 self.opp_conditions, self.act_poke.boosts, self.opp_poke.boosts, is_my_turn)["lb"]
-        if (move.accuracy is not True) and random.random() > move.accuracy:
-            damage = 0
+        # if (move.accuracy is not True) and random.random() > move.accuracy:
+        #    damage = 0
         return damage
 
     def get_active_weather(self, move: Move, update_turn: bool):
@@ -168,6 +173,28 @@ class BattleStatus:
             recoil = math.ceil(damage * move.recoil)
 
         return recoil
+
+    @staticmethod
+    def compute_drain(pokemon: NodePokemon, move: Move, damage: int) -> (int, float):
+        """
+        Compute the draining effect of a move.
+
+        :param pokemon: attacking pokémon
+        :param move: move under consideration
+        :param damage: damage dealt by the move
+        :param is_bot: whether the pokémon belongs to the bot's team
+        :return: Drain and drain percentage dealt by the move
+        """
+        if move.drain == 0:
+            return 0, 0
+
+        max_hp = pokemon.pokemon.max_hp
+        current_hp = pokemon.current_hp
+
+        drain = int(damage * move.drain)
+        drain = drain if current_hp + drain <= max_hp else max_hp - current_hp
+        drain_percentage = round(drain / max_hp, 2)
+        return drain, drain_percentage
 
     @staticmethod
     def compute_healing(poke: NodePokemon,
