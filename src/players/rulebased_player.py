@@ -276,7 +276,8 @@ class RuleBasedPlayer(Player):
                             bot_protecting_moves.append(move)
 
                         if move.heal > 0:
-                            heal, heal_percentage = compute_healing(bot_pokemon, move, weather, terrains, True)
+                            heal, heal_percentage = compute_healing(bot_pokemon, opp_pokemon, move,
+                                                                    weather, terrains, True)
                             bot_healing_moves.update({move: {"heal": heal, "heal_percentage": heal_percentage}})
 
                         if move.status and move.target != "self":
@@ -322,6 +323,9 @@ class RuleBasedPlayer(Player):
             # Use the move "explosion" only if convenient
             if "explosion" in available_moves_ids and PokemonType.GHOST not in opp_pokemon.types and \
                     (bot_pokemon.item == "normalgem" or bot_pokemon.current_hp_fraction <= 0.5 and outspeed_p > 0.5):
+                if self.verbose:
+                    print("\nChosen move: {0}\n{1}".format("explosion", "-" * 110))
+
                 return self.create_order(Gen8Move("explosion"))
 
             # If the current pokémon outspeeds the opponent's pokémon, then deal the final hit if possible
@@ -410,7 +414,7 @@ class RuleBasedPlayer(Player):
 
             # We can boost our stats if the matchup is in our favor
             if bot_boost_moves and bot_matchup >= 0 and sum(bot_pokemon.boosts.values()) == 0\
-                    and bot_pokemon.current_hp_fraction >= 0.8 and outspeed_p > 0.5:
+                    and bot_pokemon.current_hp_fraction >= 0.8 and (outspeed_p > 0.5 or opp_damage < bot_hp / 2):
                 if self.verbose:
                     print("\nChosen move: {0}\n{1}".format(bot_boost_moves[0].id, "-" * 110))
 
@@ -478,7 +482,7 @@ class RuleBasedPlayer(Player):
 
             # If we can't do enough damage, then switch out if possible
             if max_damage < 50 and battle.available_switches and max_damage < opp_hp \
-                    and bot_matchup < self.max_team_matchup:
+                    and bot_matchup <= self.max_team_matchup:
                 self.previous_pokemon = bot_pokemon
                 if self.verbose:
                     print("\nSwitching to {0}\n{1}".format(best_switch.species, "-" * 110))
