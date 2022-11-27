@@ -3,7 +3,7 @@ from src.utilities.Heuristic import Heuristic
 from src.utilities.stats_utilities import estimate_stat
 import numpy as np
 
-# Best parameters for now (I made only a very small random search)
+# Best parameters for now (I made only a very small random search: 0.512%)
 BEST_PARAMETERS = [0.3773312057679546, 0.3420737187544153, 0.06945572301222482, 0.21113935246540538]
 BEST_PENALTY = 0.01652994976347334
 
