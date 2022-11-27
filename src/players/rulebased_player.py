@@ -181,15 +181,15 @@ class RuleBasedPlayer(Player):
         return opp_damage
 
     def choose_move(self, battle):
-        # Retrieve both active pokèmon
+        # Retrieve both active pokémon
         bot_pokemon: Pokemon = battle.active_pokemon
         opp_pokemon: Pokemon = battle.opponent_active_pokemon
 
-        # Retrieve all the other pokèmon in the team that are still alive
+        # Retrieve all the other pokémon in the team that are still alive
         bot_team = [pokemon for pokemon in battle.team.values()
                     if pokemon is not bot_pokemon and not pokemon.fainted]
 
-        # Compute matchup scores for every remaining pokèmon in the team
+        # Compute matchup scores for every remaining pokémon in the team
         bot_matchup = self.__matchup_on_types(bot_pokemon, opp_pokemon)
         team_matchups = dict()
         for pokemon in bot_team:
