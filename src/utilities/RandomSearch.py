@@ -43,6 +43,9 @@ class RandomSearch:
             sum_parameters = sum(parameters)
             parameters = [x / sum_parameters for x in parameters]
 
+            print(parameters)
+            print(penalty)
+
             heuristic = TeamHeuristic(parameters=parameters, penalty=penalty)
             player = MiniMaxPlayer(player_configuration=PlayerConfiguration(self.bot_name + str(bot_players), None),
                                    heuristic=heuristic, max_depth=self.max_depth)
