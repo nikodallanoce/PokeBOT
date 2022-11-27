@@ -390,6 +390,10 @@ def compute_other_damage_modifiers(move: Move,
     if defender.ability == "waterbubble" and move_type is PokemonType.FIRE:
         damage_modifier *= 0.5
 
+    # Pokémon with the "ice scales" ability suffer half the damage from special moves
+    if defender.ability == "icescales" and move.category is MoveCategory.SPECIAL:
+        damage_modifier *= 0.5
+
     # Pokémon with the "fluffy" ability suffer double the damage from fire-type moves
     if defender.ability == "fluffy" and move_type is PokemonType.FIRE:
         damage_modifier *= 2
@@ -746,7 +750,8 @@ def compute_move_accuracy(move: Move,
     return round(move_accuracy, 2)
 
 
-def compute_healing(pokemon: Pokemon,
+def compute_healing(attacker: Pokemon,
+                    defender: Pokemon,
                     move: Move,
                     weather: Weather = None,
                     terrains: list[Field] = None,
@@ -754,7 +759,8 @@ def compute_healing(pokemon: Pokemon,
     """
     Compute the healing dealt by a move.
 
-    :param pokemon: attacking pokémon
+    :param attacker: attacking pokémon
+    :param defender: defending pokémon
     :param move: move under consideration
     :param weather: current battle weather
     :param terrains: current battle terrains
@@ -763,15 +769,15 @@ def compute_healing(pokemon: Pokemon,
     """
     healing = None
     healing_percentage = 0.5
-    if pokemon.is_dynamaxed or move.id not in HEALING_MOVES:
+    if attacker.is_dynamaxed or move.id not in HEALING_MOVES:
         return 0, 0
 
     if is_bot:
-        max_hp = pokemon.max_hp
-        current_hp = pokemon.current_hp
+        max_hp = attacker.max_hp
+        current_hp = attacker.current_hp
     else:
-        max_hp = compute_stat(pokemon, "hp", weather, terrains)
-        current_hp = int(max_hp * pokemon.current_hp_fraction)
+        max_hp = compute_stat(attacker, "hp", weather, terrains)
+        current_hp = int(max_hp * attacker.current_hp_fraction)
 
     if move.id in ["morningsun", "moonlight", "synthesis"]:
         if weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
@@ -780,7 +786,7 @@ def compute_healing(pokemon: Pokemon,
             healing_percentage = 0.25
 
     # We assume that bot doesn't heal the opponent's pokémon from its status conditions
-    if move.id == "purify" and pokemon.status not in STATUS_CONDITIONS:
+    if move.id == "purify" and attacker.status not in STATUS_CONDITIONS:
         return 0, 0
 
     if move.id == "rest":
@@ -795,21 +801,16 @@ def compute_healing(pokemon: Pokemon,
         healing_percentage = 0.66
 
     if move.id == "strengthsap":
-        atk_boost = pokemon.boosts["atk"]
-        if pokemon.ability == "contrary":
+        # We assume that the target is the defender
+        atk_boost = defender.boosts["atk"]
+        if defender.ability == "contrary":
             atk_boost = atk_boost + 1 if atk_boost < 6 else 6
         elif atk_boost == -6:
             return 0, 0
         else:
             atk_boost = atk_boost - 1 if atk_boost > -6 else -6
 
-        if is_bot:
-            atk_stat = pokemon.stats["atk"]
-        else:
-            atk_stat = estimate_stat(pokemon, "atk")
-
-        atk_stat *= compute_stat_modifiers(pokemon, "atk", weather, terrains)
-        healing = int(atk_stat * compute_stat_boost(pokemon, "atk", atk_boost))
+        healing = compute_stat(defender, "atk", weather, terrains, not is_bot, boost=atk_boost)
 
     if healing is None:
         healing = int(max_hp * healing_percentage)

@@ -4,7 +4,7 @@ from src.players.rulebased_player import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.TeamHeuristic import TeamHeuristic
 from src.utilities.utilities import evaluate_players_locally
-from src.utilities.ShowdownHeuristc import ShowdownHeuristic
+from src.utilities.TeamHeuristic import TeamHeuristic
 import argparse
 import asyncio
 

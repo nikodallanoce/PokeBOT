@@ -30,7 +30,8 @@ class TeamHeuristic(Heuristic):
 
         opp_hp = battle_node.opp_poke.current_hp
         opp_max_hp = estimate_stat(battle_node.opp_poke.pokemon, "hp")
-        opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
+        #opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
+        opp_team_len = 0
 
         b1 = self.parameters[0]
         b2 = self.parameters[1]
