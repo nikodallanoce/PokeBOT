@@ -5,9 +5,8 @@ from poke_env import PlayerConfiguration, ShowdownServerConfiguration
 from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.rulebased_player import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
+from src.utilities.utilities import challenge_player, send_player_on_ladder
 from src.utilities.TeamHeuristic import TeamHeuristic
-from src.utilities.utilities import challenge_player
-from src.utilities.ShowdownHeuristc import ShowdownHeuristic
 
 
 def parse_arguments(known=False):
@@ -17,6 +16,7 @@ def parse_arguments(known=False):
     parser.add_argument("--matches", type=int, default=1, help="the number of challenges that the bot will accept")
     parser.add_argument("--player", type=str, default="RB",
                         help="the bot's playstyle, MBP MaxBasePower, BD BestDamage, RB RuleBased, MM MiniMax")
+    parser.add_argument("--ladder", action="store_true", help="let the bot play on the ladder")
     parser.add_argument("--verbose", action="store_true", help="let the bot print its status at each turn")
     parser.add_argument("--save", action="store_true", help="save the battle results in a csv file")
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
@@ -52,7 +52,10 @@ async def run_bot_online():
 
     player.verbose = opt_parser.verbose
 
-    await challenge_player(player, None, n_matches, False, save_results)
+    if opt_parser.ladder:
+        await send_player_on_ladder(player, n_matches, True, save_results)
+    else:
+        await challenge_player(player, None, n_matches, False, save_results)
 
 
 if __name__ == '__main__':

@@ -133,11 +133,11 @@ class RuleBasedPlayer(Player):
 
         return False
 
-    def __compute_best_swich(self,
-                             team_matchups: dict[Pokemon, float],
-                             opp_pokemon: Pokemon,
-                             weather: Weather,
-                             terrains: list[Field]) -> Union[Pokemon | None]:
+    def __compute_best_switch(self,
+                              team_matchups: dict[Pokemon, float],
+                              opp_pokemon: Pokemon,
+                              weather: Weather,
+                              terrains: list[Field]) -> Union[Pokemon | None]:
         if team_matchups:
             # Retrieve all the pokémon in the team with the best matchup
             best_switches = {pokemon: pokemon.stats for pokemon, matchup in team_matchups.items()
@@ -181,15 +181,15 @@ class RuleBasedPlayer(Player):
         return opp_damage
 
     def choose_move(self, battle):
-        # Retrieve both active pokèmon
+        # Retrieve both active pokémon
         bot_pokemon: Pokemon = battle.active_pokemon
         opp_pokemon: Pokemon = battle.opponent_active_pokemon
 
-        # Retrieve all the other pokèmon in the team that are still alive
+        # Retrieve all the other pokémon in the team that are still alive
         bot_team = [pokemon for pokemon in battle.team.values()
                     if pokemon is not bot_pokemon and not pokemon.fainted]
 
-        # Compute matchup scores for every remaining pokèmon in the team
+        # Compute matchup scores for every remaining pokémon in the team
         bot_matchup = self.__matchup_on_types(bot_pokemon, opp_pokemon)
         team_matchups = dict()
         for pokemon in bot_team:
@@ -219,7 +219,7 @@ class RuleBasedPlayer(Player):
 
         # Compute the best pokémon the bot can switch to
         self.max_team_matchup = max(team_matchups.values()) if len(team_matchups) > 0 else -8
-        best_switch = self.__compute_best_swich(team_matchups, opp_pokemon, weather, terrains)
+        best_switch = self.__compute_best_switch(team_matchups, opp_pokemon, weather, terrains)
 
         # Compute the hp of both pokémon
         bot_hp = bot_pokemon.current_hp
@@ -506,7 +506,7 @@ class RuleBasedPlayer(Player):
 
             # Choose the new active pokèmon
             self.max_team_matchup = max(team_matchups.values()) if len(team_matchups) > 0 else -8
-            best_switch = self.__compute_best_swich(team_matchups, opp_pokemon, weather, terrains)
+            best_switch = self.__compute_best_switch(team_matchups, opp_pokemon, weather, terrains)
             self.previous_pokemon = bot_pokemon
             if self.verbose:
                 print("Switching to {0}\n{1}".format(best_switch.species, "-" * 110))
