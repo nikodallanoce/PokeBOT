@@ -1,3 +1,5 @@
+import os
+
 from poke_env.player import Player, cross_evaluate
 from poke_env.environment import Pokemon, PokemonType
 from typing import Union
@@ -9,24 +11,30 @@ async def send_player_on_ladder(player: Player,
                                 n_matches: int = 10,
                                 verbose: bool = False,
                                 save_results: bool = False) -> None:
-    await player.ladder(n_matches)
+    for i in range(n_matches):
+        # Save useful data
+        await player.ladder(1)
+        ratings = [battle.rating for battle in player.battles.values()]
+        results = [battle.won for battle in player.battles.values()]
+        turns = [battle.turn for battle in player.battles.values()]
 
-    # Save useful data
-    ratings = [battle.rating for battle in player.battles.values()]
-    results = [battle.won for battle in player.battles.values()]
-    turns = [battle.turn for battle in player.battles.values()]
+        player_type = str(type(player)).split(".")[-1][:-2]
+        if verbose:
+            wins = sum(result for result in results if result)
+            win_ratio = wins / len(results)
+            print("Player: {0}, username: {1}".format(player_type, player.username))
+            print("Matches played: {0}, Win ratio: {1}, Rating: {2}".format(n_matches, win_ratio, ratings[-1]))
 
-    player_type = str(type(player)).split(".")[-1][:-2]
-    if verbose:
-        wins = sum(result for result in results if result)
-        win_ratio = wins / len(results)
-        print("Player: {0}, username: {1}".format(player_type, player.username))
-        print("Matches played: {0}, Win ratio: {1}, Rating: {2}".format(n_matches, win_ratio, ratings[-1]))
+        if save_results:
+            csv_name = "bot_data/ladder_{0}_{1}.csv".format(player_type, player.username)
+            battles_dict = {"Rating": [ratings[-1]], "Turns": [turns[-1]], "Won": [results[-1]]}
+            if os.path.isfile(csv_name):
+                df_ratings = pd.read_csv(csv_name, index_col=0)
+                df_ratings = pd.concat([df_ratings, pd.DataFrame(battles_dict)], ignore_index=True)
+            else:
+                df_ratings = pd.DataFrame(battles_dict)
 
-    if save_results:
-        battles_dict = {"Rating": ratings, "Turns": turns, "Won": results}
-        df_ratings = pd.DataFrame(battles_dict)
-        df_ratings.to_csv("bot_data/ladder_{0}_{1}.csv".format(player_type, player.username))
+            df_ratings.to_csv(csv_name)
 
 
 async def challenge_player(player: Player,
