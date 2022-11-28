@@ -5,7 +5,7 @@ from poke_env.environment.move import Gen8Move
 
 from src.utilities.battle_utilities import DEFAULT_MOVES_IDS
 from src.utilities.stats_utilities import estimate_stat, compute_stat_modifiers, compute_stat_boost, compute_stat
-
+import copy
 
 class NodePokemon:
 
@@ -13,6 +13,7 @@ class NodePokemon:
                  boosts: dict[str, int] = None,
                  status: Status = None, moves: list[Move] = None, effects: dict = None):
         self.pokemon: Pokemon = pokemon
+        self.poke = copy.deepcopy(pokemon)
         self.is_act_poke: bool = is_act_poke
 
         if current_hp is None and is_act_poke:
