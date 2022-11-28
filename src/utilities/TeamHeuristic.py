@@ -3,9 +3,9 @@ from src.utilities.Heuristic import Heuristic
 from src.utilities.stats_utilities import estimate_stat
 import numpy as np
 
-# Best parameters for now (I made only a very small random search: 0.512%)
-BEST_PARAMETERS = [0.3773312057679546, 0.3420737187544153, 0.06945572301222482, 0.21113935246540538]
-BEST_PENALTY = 0.01652994976347334
+# Best parameters for now (0.521/1 1000 matches vs Baseline)
+BEST_PARAMETERS = [0.4535852806937534, 0.0594175956625287, 0.2676623723834168, 0.219334751260301]
+BEST_PENALTY = 0.04184383589199678
 
 
 class TeamHeuristic(Heuristic):
@@ -30,8 +30,8 @@ class TeamHeuristic(Heuristic):
 
         opp_hp = battle_node.opp_poke.current_hp
         opp_max_hp = estimate_stat(battle_node.opp_poke.pokemon, "hp")
-        #opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
-        opp_team_len = 0
+        opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
+        # opp_team_len = 0
 
         b1 = self.parameters[0]
         b2 = self.parameters[1]
