@@ -29,7 +29,7 @@ class RuleBasedPlayer(Player):
                                               battle_format=battle_format, log_level=log_level,
                                               max_concurrent_battles=max_concurrent_battles, save_replays=save_replays,
                                               server_configuration=server_configuration,
-                                              start_timer_on_battle_start=start_timer_on_battle_start,
+                                              start_timer_on_battle_start=True,
                                               start_listening=start_listening,
                                               ping_interval=ping_interval, ping_timeout=ping_timeout, team=team)
         self.verbose = False

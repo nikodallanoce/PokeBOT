@@ -46,7 +46,8 @@ async def run_bot_online():
         player = RuleBasedPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "MM":
         heuristic = TeamHeuristic()
-        player = MiniMaxPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration, heuristic=heuristic, max_depth=2)
+        player = MiniMaxPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration,
+                               heuristic=heuristic, max_depth=2)
     else:
         raise ValueError
 
