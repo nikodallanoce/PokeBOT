@@ -11,7 +11,7 @@ We developed a battle bot that you can play against on a [public server](https:/
 
 ### Enhanced playstyle
 - **RuleBased**, the bot acts based on hard-coded rules based on the matchup score between it and the opponent pokémon. This version can switch and use moves that can boost stats, set entry hazards and give a status condition.
-- **ExpectMiniMax**, the bot acts on an expect-minimax fashion by looking for some moves ahead in order to choose the best course of action.
+- **MiniMax**, the bot acts on a minimax fashion by looking for some moves ahead in order to choose the best course of action.
 
 ## How to challenge the bot
 First, you need to create a registered account for the bot on the [public server](https://play.pokemonshowdown.com/), then clone the repo
@@ -65,7 +65,7 @@ RESTORE CHATROOM: staff
 Worker 1 now listening on 0.0.0.0:8000
 Test your server at http://localhost:8000
 ```
-If so, then everything is fine and you can test the various players against each other by using the following command
+If so, then everything is fine, you can test the various players against each other by using the following command
 ```bash
 python run_local.py --matches 1000 --players BD RB
 ```

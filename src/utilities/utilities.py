@@ -22,8 +22,7 @@ async def send_player_on_ladder(player: Player,
         if verbose:
             wins = sum(result for result in results if result)
             win_ratio = wins / len(results)
-            print("Player: {0}, username: {1}".format(player_type, player.username))
-            print("Matches played: {0}, Win ratio: {1}, Rating: {2}".format(n_matches, win_ratio, ratings[-1]))
+            print("Match: {0}, Won: {1}, Win ratio: {2}, Rating: {3}".format(i, results[-1], win_ratio, ratings[-1]))
 
         if save_results:
             csv_name = "bot_data/ladder_{0}_{1}.csv".format(player_type, player.username)
