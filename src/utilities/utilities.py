@@ -1,9 +1,8 @@
-import os
-
 from poke_env.player import Player, cross_evaluate
 from poke_env.environment import Pokemon, PokemonType
 from typing import Union
 from tabulate import tabulate
+import os
 import pandas as pd
 
 

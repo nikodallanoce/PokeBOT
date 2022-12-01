@@ -1,0 +1,5 @@
+,Player,MaxBasePower0,BestDamage0,RuleBased0,MiniMax0
+0,MaxBasePower0,None,0.104,0.084,0.114
+1,BestDamage0,0.896,None,0.398,0.452
+2,RuleBased0,0.916,0.602,None,0.571
+3,MiniMax0,0.886,0.548,0.429,None
