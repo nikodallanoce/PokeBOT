@@ -3,7 +3,7 @@ import os
 import asyncio
 from poke_env import PlayerConfiguration, ShowdownServerConfiguration
 from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
-from src.players.rulebased_player import RuleBasedPlayer
+from src.players.RuleBasedPlayer import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.utilities import challenge_player, send_player_on_ladder
 from src.utilities.TeamHeuristic import TeamHeuristic

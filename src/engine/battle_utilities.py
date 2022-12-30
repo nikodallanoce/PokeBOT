@@ -95,9 +95,6 @@ def compute_move_accuracy(move: Move,
 
             return move.accuracy
 
-    # accuracy = compute_stat(attacker, "accuracy", weather, terrains, boost=attacker_accuracy_boost)
-    # evasion = compute_stat(defender, "evasuion", weather, terrains, boost=defender_evasion_boost)
-
     # Apply modifiers to attacker's accuracy and defender's evasion
     accuracy *= compute_stat_modifiers(attacker, "accuracy", weather, terrains)
     evasion = compute_stat_modifiers(defender, "evasion", weather, terrains)
@@ -106,11 +103,9 @@ def compute_move_accuracy(move: Move,
     accuracy *= compute_stat_boost(attacker, "accuracy", attacker_accuracy_boost)
     evasion *= compute_stat_boost(defender, "evasion", defender_evasion_boost)
 
+    # Pokémon with the "hustle" ability have their accuracy decreased while using a physical move
     if attacker.ability == "hustle" and move.category is MoveCategory.PHYSICAL:
         accuracy *= 0.8
-
-    if defender.item == "brigthpowder":
-        accuracy *= 0.9
 
     # Compute move accuracy
     move_accuracy = accuracy / evasion

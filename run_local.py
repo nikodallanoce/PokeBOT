@@ -1,6 +1,6 @@
 from poke_env import PlayerConfiguration
 from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
-from src.players.rulebased_player import RuleBasedPlayer
+from src.players.RuleBasedPlayer import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
 from src.utilities.utilities import evaluate_players_locally
 from src.utilities.TeamHeuristic import TeamHeuristic

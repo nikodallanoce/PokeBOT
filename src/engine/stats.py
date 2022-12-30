@@ -96,9 +96,11 @@ def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
 def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> float:
     def_modifier = 1
 
+    # Pokémon with the "grass pelt" ability have their defense increased under grassy terrain
     if pokemon.ability == "grasspelt" and Field.GRASSY_TERRAIN in terrains:
         def_modifier *= 1.5
 
+    # Pokémon with the "marvel scale" ability have their defense increased if they have a status condition
     if pokemon.ability == "marvelscale" and pokemon.status in STATUS_CONDITIONS:
         def_modifier *= 1.5
 
@@ -106,6 +108,7 @@ def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> f
     if pokemon.item == "eviolite":
         def_modifier *= 1.5
 
+    # Ditto has its defense doubled if it holds the "metal powder" item
     if pokemon.species == "ditto" and pokemon.item == "metalpowder":
         def_modifier *= 2
 
@@ -115,15 +118,19 @@ def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> f
 def __compute_spa_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     spa_modifier = 1
 
+    # Pokémon with the "flower gift" or "solar power" abilities have their special attack increased under sunny weather
     if pokemon.ability in ["flowergift", "solarpower"] and weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
         spa_modifier *= 1.5
 
+    # Pokémon with the "choice specs" item have their special attack increased if not dynmaxed
     if pokemon.item == "choicespecs" and not pokemon.is_dynamaxed:
         spa_modifier *= 1.5
 
+    # Clamperl has its special attack doubled if it holds the "deep sea tooth" item
     if pokemon.species == "clamperl" and pokemon.item == "deepseatooth":
         spa_modifier *= 2
 
+    # Pikachu has its special attack doubled if it holds the "light ball" item
     if "pikachu" in pokemon.species and pokemon.item == "lightball":
         spa_modifier *= 2
 
@@ -133,12 +140,15 @@ def __compute_spa_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
 def __compute_spd_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     spd_modifier = 1
 
+    # Rock-type pokémon have their special defense increased under sandstorm
     if PokemonType.ROCK in pokemon.types and weather is Weather.SANDSTORM:
         spd_modifier *= 1.5
 
+    # Pokémon with the "assault vest" item have their special defense increased
     if pokemon.item == "assaultvest":
         spd_modifier *= 1.5
 
+    # Clamperls has its special defense increased if it holds the "deep sea scale" item
     if pokemon.species == "clamperl" and pokemon.item == "deepseascale":
         spd_modifier *= 2
 
@@ -146,6 +156,7 @@ def __compute_spd_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     if pokemon.item == "eviolite":
         spd_modifier *= 1.5
 
+    # Ditto has its special defense doubled if it holds the "metal powder" item
     if pokemon.species == "ditto" and pokemon.item == "metalpowder":
         spd_modifier *= 2
 
@@ -155,33 +166,43 @@ def __compute_spd_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
 def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains: list[Field] = None) -> float:
     spe_modifier = 1
 
+    # Pokémon with the "swift swim" ability have their speed doubled under rainy weather
     if pokemon.ability == "swiftswim" and weather in [Weather.RAINDANCE, Weather.PRIMORDIALSEA]:
         spe_modifier *= 2
 
+    # Pokémon with the "chlorophyll" ability have their speed doubled under sunny day
     if pokemon.ability == "chlorophyll" and weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
         spe_modifier *= 2
 
+    # Pokémon with the "sand rush" ability have their speed doubled under sandstorm
     if pokemon.ability == "sandrush" and weather is Weather.SANDSTORM:
         spe_modifier *= 2
 
+    # Pokémon with the "slush rush" ability have their speed doubled under hail
     if pokemon.ability == "slushrush" and weather is Weather.HAIL:
         spe_modifier *= 2
 
+    # Pokémon with the "quick feet" ability have their speed increased if they have a status condition
     if pokemon.ability == "quickfeet" and pokemon.status in STATUS_CONDITIONS:
         spe_modifier *= 1.5
 
+    # Pokémon with the "surge surfer" ability have their speed doubled under electric terrain
     if pokemon.ability == "surgesurfer" and Field.ELECTRIC_TERRAIN in terrains:
         spe_modifier *= 2
 
+    # Pokémon with the "choice scarf" item have their speed increased
     if pokemon.item == "choicescarf":
         spe_modifier *= 1.5
 
+    # Ditto has its speed increased if it holds the "quick powder" item
     if pokemon.species == "ditto" and pokemon.item == "quickpowder":
         spe_modifier *= 1.5
 
+    # Pokémon with the "heavy ball" item have their speed halved
     if pokemon.item == "heavyball":
         spe_modifier *= 0.5
 
+    # Paralyzed pokémon have their speed halved
     if pokemon.status is Status.PAR:
         spe_modifier *= 0.5
 
@@ -191,12 +212,15 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains:
 def __compute_accuracy_modifiers(pokemon: Pokemon) -> float:
     accuracy_modifier = 1
 
+    # Pokémon with the "compound eyes" have their accuracy increased
     if pokemon.ability == "compoundeyes":
         accuracy_modifier *= 1.3
 
+    # Pokémon with the "wide lens" item have their accuracy increased
     if pokemon.item == "widelens":
         accuracy_modifier *= 1.1
 
+    # Pokémon with the "victory star" item have their accuracy increased
     if pokemon.item == "victorystar":
         accuracy_modifier *= 1.1
 
@@ -206,18 +230,23 @@ def __compute_accuracy_modifiers(pokemon: Pokemon) -> float:
 def __compute_evasion_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     evasion_modifier = 1
 
+    # Pokémon with the "sand veil" ability have their evasion increased under sandstorm
     if pokemon.ability == "sandveil" and weather is Weather.SANDSTORM:
         evasion_modifier *= 1.2
 
+    # Pokémon with the "tangled feet" ability have their evasion increased if they are confused
     if pokemon.ability == "tangledfeet" and Effect.CONFUSION in list(pokemon.effects.keys()):
         evasion_modifier *= 1.5
 
+    # Pokémon with the "snow cloak" ability have their evasion increased under hail
     if pokemon.ability == "snowcloak" and weather is Weather.HAIL:
         evasion_modifier *= 1.2
 
+    # Pokémon with the "bright powder" item have their evasion increased
     if pokemon.item == "brigthpowder":
         evasion_modifier *= 1.1
 
+    # Pokémon with the "lax incense" item have their evasion increased
     if pokemon.item == "laxincense":
         evasion_modifier *= 1.05
 
