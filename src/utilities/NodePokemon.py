@@ -1,10 +1,7 @@
-from poke_env.environment import Pokemon, Battle, Move, MoveCategory, Weather, Field, Status, SideCondition, \
-    AbstractBattle
-from poke_env.environment.pokemon_type import PokemonType as pt
-from poke_env.environment.move import Gen8Move
+from poke_env.environment import Pokemon, Move, MoveCategory, Weather, Field, Status
 
-from src.utilities.battle_utilities import DEFAULT_MOVES_IDS
-from src.utilities.stats_utilities import estimate_stat, compute_stat_modifiers, compute_stat_boost, compute_stat
+from src.engine.useful_data import DEFAULT_MOVES_IDS
+from src.engine.stats import estimate_stat, compute_stat_modifiers, compute_stat_boost
 import copy
 
 class NodePokemon:

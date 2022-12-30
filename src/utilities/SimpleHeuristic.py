@@ -1,6 +1,6 @@
 from src.utilities.BattleStatus import BattleStatus
 from src.utilities.Heuristic import Heuristic
-from src.utilities.stats_utilities import estimate_stat
+from src.engine.stats import estimate_stat
 
 
 class SimpleHeuristic(Heuristic):

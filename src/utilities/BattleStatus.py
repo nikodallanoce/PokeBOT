@@ -1,10 +1,11 @@
 import math
-
+from poke_env.environment import SideCondition
 from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
-from src.utilities.battle_utilities import *
-from src.utilities.stats_utilities import *
-import random
+from src.engine.damage import compute_damage
+from src.engine.useful_data import HEALING_MOVES
+from src.engine.battle_utilities import *
+from src.engine.stats import *
 
 
 class BattleStatus:

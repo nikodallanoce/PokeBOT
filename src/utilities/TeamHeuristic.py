@@ -1,6 +1,6 @@
 from src.utilities.BattleStatus import BattleStatus
 from src.utilities.Heuristic import Heuristic
-from src.utilities.stats_utilities import estimate_stat
+from src.engine.stats import estimate_stat
 import numpy as np
 
 # Best parameters for now (I made only a very small random search)

@@ -1,12 +1,11 @@
 from poke_env.environment import Pokemon, Weather, Field, Status, PokemonType, Effect
 from poke_env.data import NATURES
+from src.engine.useful_data import STATUS_CONDITIONS
 from typing import Union
 
-STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
 
-
-def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 21, nature: str = "Neutral") -> int:
-    estimated_stat = 2 * pokemon.base_stats[stat] + ivs + evs
+def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nature: str = "Neutral") -> int:
+    estimated_stat = 2 * pokemon.base_stats[stat] + ivs + evs / 4
     estimated_stat = int(estimated_stat * pokemon.level / 100) + 5
 
     # The hp stat has a different computation than the others
@@ -55,30 +54,39 @@ def compute_stat_boost(pokemon: Pokemon, stat: str, boost: Union[int | None] = N
 def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     atk_modifier = 1
 
+    # Pokémon with the "flower gift" ability have their attack increased under sunny weather
     if pokemon.ability == "flowergift" and weather in [Weather.SUNNYDAY, Weather.DESOLATELAND]:
         atk_modifier *= 1.5
 
+    # Pokémon with the "defeatist" ability have their attack halved when their hp is <= 1/2
     if pokemon.ability == "defeatist" and pokemon.current_hp_fraction <= 0.5:
         atk_modifier *= 0.5
 
+    # Pokémon with the "guts" ability have their attack increased when they have a status condition
     if pokemon.ability == "guts" and pokemon.status in STATUS_CONDITIONS:
         atk_modifier *= 1.5
 
+    # Pokémon with the "hustle" ability have their attack increased
     if pokemon.ability == "hustle":
         atk_modifier *= 1.5
 
+    # Pokémon with the "gorilla tactics" have their attack increased if they are not dynamaxed
     if pokemon.ability == "gorillatactics" and not pokemon.is_dynamaxed:
         atk_modifier *= 1.5
 
+    # Pokémon with the "huge power" or "pure power" abilities have their attack doubled
     if pokemon.ability in ["hugepower", "purepower"]:
         atk_modifier *= 2
 
+    # Pokémon with the "choiceband" item have their attack increased
     if pokemon.item == "choiceband" and not pokemon.is_dynamaxed:
         atk_modifier *= 1.5
 
+    # Cubone and its evolutions have their attack doubled if they hold the "thick club" item
     if pokemon.species in ["cubone", "marowak", "marowakalola"] and pokemon.item == "thickclub":
         atk_modifier *= 2
 
+    # Pikachu has its attack doubled if it holds the "light ball" item
     if "pikachu" in pokemon.species and pokemon.item == "lightball":
         atk_modifier *= 2
 
@@ -94,7 +102,7 @@ def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> f
     if pokemon.ability == "marvelscale" and pokemon.status in STATUS_CONDITIONS:
         def_modifier *= 1.5
 
-    # The "eviolite" item works with only non-fully evolved pokèmon, we assume that this item is used only for such case
+    # The "eviolite" item works with only non-fully evolved pokèmon, we assume that this item is used only in such case
     if pokemon.item == "eviolite":
         def_modifier *= 1.5
 

@@ -1,10 +1,13 @@
 from poke_env.player import Player
 from poke_env.teambuilder import Teambuilder
 from poke_env import PlayerConfiguration, ServerConfiguration
-from src.utilities.battle_utilities import *
-from src.utilities.stats_utilities import compute_stat
+from src.engine.move_effects import compute_healing
+from src.engine.battle_utilities import *
+from src.engine.useful_data import *
+from src.engine.stats import compute_stat
 from src.utilities.utilities import matchups_to_string
-from typing import Optional
+from src.engine.damage import compute_damage
+from typing import Optional, Union
 import numpy as np
 
 

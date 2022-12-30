@@ -1,5 +1,5 @@
 from src.utilities.Heuristic import Heuristic
-from src.utilities.stats_utilities import estimate_stat
+from src.engine.stats import estimate_stat
 
 
 class OpponentHPHeuristic(Heuristic):

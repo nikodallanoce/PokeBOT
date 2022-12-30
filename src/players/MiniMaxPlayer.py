@@ -1,20 +1,19 @@
 import math
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from poke_env import PlayerConfiguration, ServerConfiguration
-from poke_env.environment import Battle
 from poke_env.player import Player
 from poke_env.teambuilder import Teambuilder
-from poke_env.environment.status import Status
 
 from src.utilities.BattleStatus import BattleStatus
 from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
-from src.utilities.battle_utilities import *
-from src.utilities.stats_utilities import compute_stat
+from src.engine.battle_utilities import *
+from src.engine.stats import compute_stat
 from src.utilities.SimpleHeuristic import SimpleHeuristic
 from src.utilities.utilities import matchups_to_string
+from src.engine.damage import compute_damage
 
 
 class MiniMaxPlayer(Player):

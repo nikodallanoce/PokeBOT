@@ -2,7 +2,8 @@ from poke_env.environment import Move, Pokemon
 from poke_env.player import Player
 from poke_env.teambuilder import Teambuilder
 from poke_env import PlayerConfiguration, ServerConfiguration
-from src.utilities.battle_utilities import compute_damage, outspeed_prob, retrieve_battle_status, bot_status_to_string
+from src.engine.damage import compute_damage
+from src.engine.battle_utilities import outspeed_prob, retrieve_battle_status, bot_status_to_string
 from typing import Optional, Union
 
 
