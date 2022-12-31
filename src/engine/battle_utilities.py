@@ -1,6 +1,6 @@
 from poke_env.environment import Pokemon, Move, Weather, Field, AbstractBattle
 from poke_env.environment.move_category import MoveCategory
-from src.engine.stats import compute_stat_modifiers, compute_stat_boost, compute_stat, stats_to_string
+from src.engine.stats import compute_stat, stats_to_string
 from src.utilities.utilities import types_to_string
 
 
@@ -12,7 +12,6 @@ def outspeed_prob(bot_pokemon: Pokemon,
                   verbose: bool = False) -> dict[str, float]:
     """
     Computes the probability of outspeeding the opponent's pokémon.
-
     :param bot_pokemon: bot's active pokémon
     :param opp_pokemon: opponent's active pokémon
     :param weather: current battle weather
@@ -54,7 +53,6 @@ def compute_move_accuracy(move: Move,
                           verbose: bool = False) -> float:
     """
     Computes the accuracy of a move.
-
     :param move: move under consideration
     :param attacker: attacking pokémon
     :param defender: defending pokémon
@@ -95,13 +93,9 @@ def compute_move_accuracy(move: Move,
 
             return move.accuracy
 
-    # Apply modifiers to attacker's accuracy and defender's evasion
-    accuracy *= compute_stat_modifiers(attacker, "accuracy", weather, terrains)
-    evasion = compute_stat_modifiers(defender, "evasion", weather, terrains)
-
-    # Compute boosts to the previous stats
-    accuracy *= compute_stat_boost(attacker, "accuracy", attacker_accuracy_boost)
-    evasion *= compute_stat_boost(defender, "evasion", defender_evasion_boost)
+    # Compute accuracy and the evasion
+    accuracy *= compute_stat(attacker, "accuracy", weather, terrains, boost=attacker_accuracy_boost)
+    evasion = compute_stat(defender, "evasion", weather, terrains, boost=defender_evasion_boost)
 
     # Pokémon with the "hustle" ability have their accuracy decreased while using a physical move
     if attacker.ability == "hustle" and move.category is MoveCategory.PHYSICAL:
@@ -119,7 +113,6 @@ def compute_move_accuracy(move: Move,
 def retrieve_battle_status(battle: AbstractBattle) -> dict:
     """
     Retrieves some infos about the current battle.
-
     :param battle: battle under consideration
     :return: Weather, terrains and conditions on both sides
     """
@@ -137,7 +130,6 @@ def retrieve_battle_status(battle: AbstractBattle) -> dict:
 def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: Weather, terrains: list[Field]) -> str:
     """
     Builds a string that contains the main infos of a battle turn from the bot's viewpoint.
-
     :param bot_pokemon: bot's pokémon
     :param opp_pokemon: opponent's pokémon
     :param weather: current battle weather

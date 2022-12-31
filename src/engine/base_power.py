@@ -2,13 +2,13 @@ from poke_env.environment import Pokemon, Move, Status, Effect
 from poke_env.environment.move_category import MoveCategory
 from poke_env.environment.pokemon_type import PokemonType
 from src.engine.useful_data import STATUS_CONDITIONS, IGNORE_EFFECT_ABILITIES_IDS
+from src.engine.stats import compute_stat
 from typing import Union
 
 
 def base_power_modifiers_moves(move: Move, attacker: Pokemon, defender: Pokemon) -> float:
     """
     Computes the modifiers of a move's base power considering the move itself.
-
     :param move: move under consideration
     :param attacker: attacking pokémon
     :param defender: defending pokémon
@@ -45,7 +45,6 @@ def base_power_modifiers_moves(move: Move, attacker: Pokemon, defender: Pokemon)
 def base_power_modifiers_abilities(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> float:
     """
     Computes the modifiers of a move's base power considering the abilities of both active pokémon.
-
     :param move: move under consideration
     :param move_type: move type
     :param attacker: attacking pokémon
@@ -162,7 +161,6 @@ def base_power_modifiers_abilities(move: Move, move_type: PokemonType, attacker:
 def base_power_modifiers_items(move: Move, move_type: PokemonType, attacker: Pokemon) -> float:
     """
     Computes the modifiers of a move's base power considering the items of the active pokémon.
-
     :param move: move under consideration
     :param move_type: move type
     :param attacker: attacking pokémon
@@ -259,7 +257,6 @@ def compute_base_power(move: Move,
                        modifier: bool = False) -> Union[float, int]:
     """
     Compute the base power of a move considering the move itself, the abilities of both active pokémon and their items.
-
     :param move: move under consideration
     :param move_type: the current type of the move
     :param attacker: attacking pokémon
@@ -267,10 +264,43 @@ def compute_base_power(move: Move,
     :param modifier: if the modifier is given instead of the actual base power
     :return: the actual base power or the modifier
     """
+    power = move.base_power
+
+    # Some moves change their power based on the attacker's remaining hp
+    if move.id in ["eruption", "waterspout", "dragonenergy"]:
+        attacker_max_hp = compute_stat(attacker, "hp")
+        attacker_current_hp = int(attacker_max_hp * attacker.current_hp_fraction)
+        power = int(150 * attacker_current_hp / attacker_max_hp)
+        if power < 1:
+            power = 1
+
+    # The "grass knot" move has its power based on the defender's weight
+    if move.id == "grassknot":
+        defender_weight = defender.weight
+        if defender_weight < 10:
+            power = 20
+        elif defender_weight < 25:
+            power = 40
+        elif defender_weight < 50:
+            power = 60
+        elif defender_weight < 100:
+            power = 80
+        elif defender_weight < 200:
+            power = 100
+        else:
+            power = 120
+
+    # Some move have their power increased by the amount of the user's positive boosts
+    if move.id in ["powertrip", "storedpower"]:
+        boosts = sum([boost for boost in attacker.boosts.values() if boost > 0])
+        power = 20 * (boosts + 1)
+
+    # Compute all modifiers
     base_power_modifier = base_power_modifiers_moves(move, attacker, defender)
     base_power_modifier *= base_power_modifiers_abilities(move, move_type, attacker, defender)
     base_power_modifier *= base_power_modifiers_items(move, move_type, attacker)
+
     if modifier:
         return base_power_modifier
     else:
-        return int(move.base_power * base_power_modifier)
+        return int(power * base_power_modifier)

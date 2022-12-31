@@ -7,7 +7,6 @@ from src.engine.stats import estimate_stat, compute_stat
 def move_changes_type(move: Move, attacker: Pokemon) -> (bool, PokemonType):
     """
     Computes the new type of the move if the attacker has an ability or item that changes it.
-
     :param move: the move under consideration
     :param attacker: the pokémon
     :return: Boolean that states if the move has changed type and the new type itself
@@ -56,7 +55,6 @@ def compute_healing(attacker: Pokemon,
                     is_bot: bool = False) -> (int, float):
     """
     Compute the healing dealt by a move.
-
     :param attacker: attacking pokémon
     :param defender: defending pokémon
     :param move: move under consideration
@@ -121,7 +119,6 @@ def compute_healing(attacker: Pokemon,
 def compute_drain(pokemon: Pokemon, move: Move, damage: int, is_bot: False) -> (int, float):
     """
     Compute the draining effect of a move.
-
     :param pokemon: attacking pokémon
     :param move: move under consideration
     :param damage: damage dealt by the move
@@ -147,7 +144,6 @@ def compute_drain(pokemon: Pokemon, move: Move, damage: int, is_bot: False) -> (
 def compute_recoil(pokemon: Pokemon, move: Move, damage: int, is_bot: bool = False) -> int:
     """
     Computes the recoil dealt by a move.
-
     :param pokemon: attacking pokémon
     :param move: move under consideration
     :param damage: damage dealt by the move

@@ -11,7 +11,6 @@ from typing import Union
 def move_fixed_damage(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> (bool, int):
     """
     Computes the damage dealt by fixed-damage moves.
-
     :param move: move under consideration
     :param move_type: move type
     :param attacker: attacking pokémon
@@ -64,7 +63,6 @@ def compute_other_damage_modifiers(move: Move,
                                    defender_conditions: list[SideCondition]) -> float:
     """
     Computes the damage modifier considering various battle parameters.
-
     :param move: move under consideration
     :param move_type: move type
     :param attacker: attacking pokémon
@@ -163,9 +161,13 @@ def compute_other_damage_modifiers(move: Move,
     if defender.ability == "icescales" and move.category is MoveCategory.SPECIAL:
         damage_modifier *= 0.5
 
-    # Pokémon with the "fluffy" ability suffer double the damage from fire-type moves
-    if defender.ability == "fluffy" and move_type is PokemonType.FIRE:
-        damage_modifier *= 2
+    # Pokémon with the "fluffy" ability suffer double the damage from fire-type moves,
+    # but suffer half the damage from contact moves
+    if defender.ability == "fluffy":
+        if move_type is PokemonType.FIRE:
+            damage_modifier *= 2
+        elif "contact" in move.flags:
+            damage_modifier *= 0.5
 
     # Pokémon with the "merciless" ability deal 1.5 more damage to poisoned pokémon
     if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] \
@@ -192,10 +194,10 @@ def compute_other_damage_modifiers(move: Move,
     if SideCondition.REFLECT in defender_conditions and move.category is MoveCategory.PHYSICAL:
         damage_modifier *= 0.5
 
-    if SideCondition.AURORA_VEIL in defender.effects and move.category is not MoveCategory.Status:
+    if SideCondition.AURORA_VEIL in defender_conditions and move.category is not MoveCategory.Status:
         damage_modifier *= 0.5
 
-    if SideCondition.LIGHT_SCREEN in defender.effects and move.category is MoveCategory.SPECIAL:
+    if SideCondition.LIGHT_SCREEN in defender_conditions and move.category is MoveCategory.SPECIAL:
         damage_modifier *= 0.5
 
     # Pokémon that held the life orb item deal 1.1 damage
@@ -217,7 +219,6 @@ def compute_damage(move: Move,
                    verbose: bool = False) -> dict[str, Union[int | PokemonType]]:
     """
     Computes the damage dealt by a move.
-
     :param move: move under consideration
     :param attacker: attacking pokémon
     :param defender: defending pokémon
@@ -242,14 +243,7 @@ def compute_damage(move: Move,
     level_multiplier = 2 * attacker.level / 5 + 2
 
     # Compute the move's power
-    if move.id in ["eruption", "waterspout"]:
-        attacker_max_hp = compute_stat(attacker, "hp", weather, terrains, is_bot)
-        attacker_current_hp = int(attacker_max_hp * attacker.current_hp_fraction)
-        power = int(150 * attacker_current_hp / attacker_max_hp)
-        if power < 1:
-            power = 1
-    else:
-        power: int = compute_base_power(move, move_type, attacker, defender)
+    power: int = compute_base_power(move, move_type, attacker, defender)
 
     # Compute the ratio between the attacker atk/spa stat and the defender def/spd stat
     if move.category is MoveCategory.PHYSICAL:
@@ -267,7 +261,6 @@ def compute_damage(move: Move,
 
         att_stat = "spa"
 
-    # Compute stat ratio
     attacker_stat_boost = None
     defender_stat_boost = None
 
@@ -282,7 +275,12 @@ def compute_damage(move: Move,
     elif defender_boosts is not None:
         defender_stat_boost = defender_boosts[def_stat]
 
-    attacker_stat_value = compute_stat(attacker, att_stat, weather, terrains, is_bot, boost=attacker_stat_boost)
+    # There are some moves the use the defender's attack to deal damage
+    if move.use_target_offensive:
+        attacker_stat_value = compute_stat(defender, att_stat, weather, terrains, not is_bot, boost=defender_stat_boost)
+    else:
+        attacker_stat_value = compute_stat(attacker, att_stat, weather, terrains, is_bot, boost=attacker_stat_boost)
+
     if att_stat in ["atk", "spa"] and defender.ability == "thickfat" \
             and move_type in [PokemonType.FIRE, PokemonType.ICE]:
         attacker_stat_value *= 0.5
