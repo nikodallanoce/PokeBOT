@@ -194,7 +194,7 @@ def compute_other_damage_modifiers(move: Move,
     if SideCondition.REFLECT in defender_conditions and move.category is MoveCategory.PHYSICAL:
         damage_modifier *= 0.5
 
-    if SideCondition.AURORA_VEIL in defender_conditions and move.category is not MoveCategory.Status:
+    if SideCondition.AURORA_VEIL in defender.effects and move.category is not MoveCategory.Status:
         damage_modifier *= 0.5
 
     if SideCondition.LIGHT_SCREEN in defender_conditions and move.category is MoveCategory.SPECIAL:
