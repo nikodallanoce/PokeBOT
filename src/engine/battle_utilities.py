@@ -9,6 +9,7 @@ def outspeed_prob(bot_pokemon: Pokemon,
                   weather: Weather = None,
                   terrains: list[Field] = None,
                   boost: int = None,
+                  random_battle: bool = True,
                   verbose: bool = False) -> dict[str, float]:
     """
     Computes the probability of outspeeding the opponent's pokémon.
@@ -17,24 +18,46 @@ def outspeed_prob(bot_pokemon: Pokemon,
     :param weather: current battle weather
     :param terrains: current battle terrains
     :param boost: bot's pokémon "spe" stat boost
+    :param random_battle: whether the battle is a random battle or not
     :param verbose: print the computations
     :return: Outspeed probability, lower and upper bound of the opponent's "spe" stat
     """
     # Compute the stats for both pokémon
     bot_spe = compute_stat(bot_pokemon, "spe", weather, terrains, True, boost=boost)
-    opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, evs=0, boost=boost)
-    opp_spe_ub = compute_stat(opp_pokemon, "spe", weather, terrains, evs=63, boost=boost)
+    opp_moves = opp_pokemon.moves.keys()
+    opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, ivs=0, evs=0, boost=boost)
+    ivs = 0 if "trickroom" in opp_moves or "gyroball" in opp_moves else 31
+    if "trickroom" in opp_moves or "gyroball" in opp_moves:
+        evs = 0
+    elif random_battle:
+        evs = 84
+    else:
+        evs = 252
+
+    opp_spe_ub = compute_stat(opp_pokemon, "spe", weather, terrains, ivs=ivs, evs=evs, boost=boost)
     if verbose:
         print("{0} spe: {1}, {2} spe: {3} {4}".format(bot_pokemon.species, bot_spe, opp_pokemon.species,
                                                       opp_spe_lb, opp_spe_ub))
 
     # Compute the outspeed probability
-    if bot_spe < opp_spe_lb:
+    if random_battle:
+        opp_spe_lb = opp_spe_ub
+        if bot_spe > opp_spe_ub:
+            outspeed_p = 1
+        elif bot_spe == opp_spe_ub:
+            outspeed_p = 0.5  # the so-called speed tie
+        else:
+            outspeed_p = 0
+    elif bot_spe < opp_spe_lb:
         outspeed_p = 0
     elif bot_spe > opp_spe_ub:
         outspeed_p = 1
+    elif opp_spe_lb == opp_spe_ub and opp_spe_ub == bot_spe:
+        # This will only happen when the bot knows that the opponent's pokémon has "trick room" or "gyro ball" and their
+        # stats are the same
+        outspeed_p = 0.5
     else:
-        outspeed_p = (bot_spe - opp_spe_lb) / 63
+        outspeed_p = (bot_spe - opp_spe_lb) / (opp_spe_ub - opp_spe_lb)
 
     # If "trick room" is active then the priority given by the "spe" stat are inverted
     if Field.TRICK_ROOM in terrains:
@@ -95,7 +118,10 @@ def compute_move_accuracy(move: Move,
 
     # Compute accuracy and the evasion
     accuracy *= compute_stat(attacker, "accuracy", weather, terrains, boost=attacker_accuracy_boost)
-    evasion = compute_stat(defender, "evasion", weather, terrains, boost=defender_evasion_boost)
+    if move.ignore_evasion:
+        evasion = 1
+    else:
+        evasion = compute_stat(defender, "evasion", weather, terrains, boost=defender_evasion_boost)
 
     # Pokémon with the "hustle" ability have their accuracy decreased while using a physical move
     if attacker.ability == "hustle" and move.category is MoveCategory.PHYSICAL:

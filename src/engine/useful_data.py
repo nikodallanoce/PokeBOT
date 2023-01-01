@@ -4,8 +4,6 @@ from poke_env.environment.pokemon_type import PokemonType
 
 STATUS_CONDITIONS = [Status.BRN, Status.FRZ, Status.PAR, Status.PSN, Status.SLP, Status.TOX]
 IGNORE_EFFECT_ABILITIES_IDS = ["moldbreaker", "teravolt", "turboblaze", "neutralizinggas"]
-PROTECTING_MOVES = ["banefulbunker", "detect", "kingsshield", "matblock", "obstruct", "protect",
-                    "spikyshield", "wideguard"]
 HEALING_MOVES = ["healorder", "milkdrink", "moonlight", "morningsun", "purify", "recover", "rest", "roost", "shoreup",
                  "slackoff", "softboiled", "strengthsap", "synthesis"]
 ENTRY_HAZARDS = {"spikes": SideCondition.SPIKES, "stealhrock": SideCondition.STEALTH_ROCK,

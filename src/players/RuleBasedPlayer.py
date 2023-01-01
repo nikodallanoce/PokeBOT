@@ -142,6 +142,7 @@ class RuleBasedPlayer(Player):
                 if battle.available_moves:
                     print("Available moves")
 
+            move: Move
             for move in battle.available_moves:
                 # Compute the move lower and upper bound of the move damage and its power and, possibly, new type
                 damage_dict = compute_damage(move, bot_pokemon, opp_pokemon, weather, terrains, opp_conditions,
@@ -159,7 +160,7 @@ class RuleBasedPlayer(Player):
                 # Put the status move in the right dict
                 if power == 0:
                     if move.category is MoveCategory.STATUS:
-                        if move.id in PROTECTING_MOVES:
+                        if move.is_protect_move:
                             bot_protecting_moves.append(move)
 
                         if move.heal > 0:

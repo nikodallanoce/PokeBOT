@@ -4,7 +4,7 @@ from src.engine.useful_data import STATUS_CONDITIONS
 from typing import Union
 
 
-def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nature: str = "Neutral") -> int:
+def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nature: str = "neutral") -> int:
     """
     Estimate the stat of a pokémon without considering boosts and modifiers. This method should be used only for
     estimating the stats of the opponent's pokémon since you can know your active pokémon stats by using the attribute
@@ -17,6 +17,9 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nat
     :return: an estimation of a pokémon's stat
     """
     if stat not in list(pokemon.base_stats.keys()) and stat not in ["accuracy", "evasion"]:
+        raise ValueError
+
+    if ivs < 0 or ivs > 31 or evs < 0 or evs > 252:
         raise ValueError
 
     estimated_stat = 2 * pokemon.base_stats[stat] + ivs + evs / 4
@@ -32,7 +35,10 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nat
             estimated_stat *= 2
     else:
         # Compute nature multiplier
-        if nature != "Neutral":
+        if nature != "neutral":
+            if nature not in NATURES.keys():
+                raise ValueError
+
             estimated_stat = int(estimated_stat * NATURES[nature][stat])
 
     return estimated_stat
@@ -312,7 +318,7 @@ def compute_stat(pokemon: Pokemon,
                  ivs: int = 31,
                  evs: int = 84,
                  boost: int = None,
-                 nature: str = "Neutral") -> int:
+                 nature: str = "neutral") -> int:
     """
     Compute the stat ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion") of a pokémon.
     :param pokemon: the pokémon under consideration
@@ -326,6 +332,9 @@ def compute_stat(pokemon: Pokemon,
     :param nature: the pokémon's nature
     :return: the actual stat value by taking into account the boost and all the modifiers
     """
+    if ivs < 0 or ivs > 31 or evs < 0 or evs > 252:
+        raise ValueError
+
     if stat in ["accuracy", "evasion"]:
         stat_value = 1
     elif is_bot and stat != "hp":
@@ -340,7 +349,7 @@ def compute_stat(pokemon: Pokemon,
     if stat not in ["accuracy", "evasion"]:
         stat_value = int(stat_value)
 
-    return int(stat_value)
+    return stat_value
 
 
 def stats_to_string(pokemon: Pokemon,

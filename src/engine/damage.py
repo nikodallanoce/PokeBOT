@@ -200,7 +200,7 @@ def compute_other_damage_modifiers(move: Move,
     if SideCondition.LIGHT_SCREEN in defender_conditions and move.category is MoveCategory.SPECIAL:
         damage_modifier *= 0.5
 
-    # Pokémon that held the life orb item deal 1.1 damage
+    # Pokémon with the "life orb" item deal increased damage
     if attacker.item == "lifeorb":
         damage_modifier *= 1.3
 
@@ -246,19 +246,13 @@ def compute_damage(move: Move,
     power: int = compute_base_power(move, move_type, attacker, defender)
 
     # Compute the ratio between the attacker atk/spa stat and the defender def/spd stat
+    def_stat = "def" if move.defensive_category is MoveCategory.PHYSICAL else "spd"
     if move.category is MoveCategory.PHYSICAL:
         if move.id != "bodypress":
             att_stat = "atk"
         else:
             att_stat = "def"
-
-        def_stat = "def"
     else:
-        if move.id not in ["psyshock", "psystrike", "secretsword"]:
-            def_stat = "spd"
-        else:
-            def_stat = "def"
-
         att_stat = "spa"
 
     attacker_stat_boost = None
@@ -270,7 +264,7 @@ def compute_damage(move: Move,
     elif attacker_boosts is not None:
         attacker_stat_boost = attacker_boosts[att_stat]
 
-    if attacker.ability == "unaware":
+    if attacker.ability == "unaware" or move.ignore_defensive:
         defender_stat_boost = 0
     elif defender_boosts is not None:
         defender_stat_boost = defender_boosts[def_stat]

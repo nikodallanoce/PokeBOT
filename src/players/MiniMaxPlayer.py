@@ -47,6 +47,7 @@ class MiniMaxPlayer(Player):
         self.heuristic: Heuristic = heuristic
         self.max_depth: int = max_depth
         self.verbose: bool = verbose
+        self.best_stats_pokemon = 0
         self.previous_pokemon = None
         self.max_team_matchup: int = -8
         self.toxic_turn: int = 0
