@@ -1,4 +1,6 @@
 import math
+from typing import List
+
 from poke_env.environment import SideCondition
 from src.utilities.Heuristic import Heuristic
 from src.utilities.NodePokemon import NodePokemon
@@ -35,15 +37,23 @@ class BattleStatus:
     def inc_id(cls):
         cls.last_id += 1
 
-    def act_poke_avail_actions(self) -> list[Move | Pokemon]:
+    def act_poke_avail_actions(self) -> List[Move | Pokemon]:
+        '''
+        Computes all the actions that our player can do.
+        :return: a list containing all the available actions.
+        '''
         # outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon)["outspeed_p"]
 
-        all_actions: list[Move | Pokemon] = []#self.avail_switches
+        all_actions: list[Move | Pokemon] = []  # self.avail_switches
         if not self.act_poke.is_fainted() and len(self.act_poke.moves) > 0:
             all_actions = self.act_poke.moves + all_actions
         return all_actions
 
     def opp_poke_avail_actions(self) -> list[Move | Pokemon]:
+        '''
+        Computes all the actions that the opponent player can do.
+        :return: a list containing all the available actions.
+        '''
         # all_moves = list[Move | Pokemon]
         all_actions: list[Move | Pokemon] = []  # self.opp_team
         if not self.opp_poke.is_fainted():
@@ -51,10 +61,22 @@ class BattleStatus:
         return all_actions
 
     def compute_score(self, heuristic: Heuristic, depth: int):
+        '''
+        Computes the score of a minimax node, given a heuristic.
+        :param heuristic: a heuristic that evaluates a node.
+        :param depth: current depth of the minimax tree.
+        :return: a score of the node.
+        '''
         score = heuristic.compute(self, depth)
         return score
 
     def simulate_action(self, move: Move | Pokemon, is_my_turn: bool):
+        '''
+        Simulates a next state derived from the current one.
+        :param move: a move to apply that will produce a new state.
+        :param is_my_turn: true if is our turn, false otherwise.
+        :return: a new battle state.
+        '''
         weather = None if len(self.weather.keys()) == 0 else next(iter(self.weather.keys()))
         if is_my_turn:
             if isinstance(move, Move):
@@ -120,7 +142,12 @@ class BattleStatus:
                                      self.opp_conditions, self, move, True)
                 return child
 
-    def can_outspeed(self, threshold: float):
+    def can_outspeed(self, threshold: float) -> bool:
+        '''
+        Checks if our Pokemon is probably faster than the opponent's one.
+        :param threshold: level of confidence.
+        :return: true if our Pokemon is faster, false otherwise.
+        '''
         weather = None if len(self.weather.keys()) == 0 else next(iter(self.weather.keys()))
         outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains)[
             "outspeed_p"]
@@ -135,6 +162,13 @@ class BattleStatus:
         return new_team
 
     def guess_damage(self, is_my_turn, move, weather):
+        '''
+        Estimates the points of damage that a move could inflict to a Pokemon.
+        :param is_my_turn: indicates if is our turn or not.
+        :param move: a Pokemon move.
+        :param weather: the current weather condition in a battle.
+        :return:
+        '''
         damage = compute_damage(move, self.act_poke.pokemon, self.opp_poke.pokemon, weather, self.terrains,
                                 self.opp_conditions, self.act_poke.boosts, self.opp_poke.boosts, is_my_turn)["lb"]
         # if (move.accuracy is not True) and random.random() > move.accuracy:
@@ -156,6 +190,11 @@ class BattleStatus:
 
     @staticmethod
     def clone_poke_list(poke_list: list[NodePokemon]):
+        '''
+        Creates a new list that contains all the Pokemon cloned.
+        :param poke_list: a list of Pokemon.
+        :return: the clone list.
+        '''
         cloned_list: list[NodePokemon] = []
         for elem in poke_list:
             cloned_list.append(elem.clone_all())
@@ -163,6 +202,13 @@ class BattleStatus:
 
     @staticmethod
     def compute_recoil(poke: NodePokemon, move: Move, damage: int) -> int:
+        '''
+        Computes the recoil that a move could return.
+        :param poke: a node representing the attributes of a Pokemon.
+        :param move: a Pokemon move.
+        :param damage: the damage that the move inflicts to a Pokemon.
+        :return:
+        '''
         if move.recoil == 0 or poke.pokemon.ability == "magicguard":
             return 0
 
@@ -202,6 +248,14 @@ class BattleStatus:
                         move: Move,
                         weather: Weather = None,
                         terrains: list[Field] = None) -> (int, float):
+        '''
+        Computes the healing health points that a move could return.
+        :param poke: a node representing the attributes of a Pokemon.
+        :param move: move under consideration.
+        :param weather: the current weather condition in a battle.
+        :param terrains: the current active field in a battle.
+        :return: a tuple representing the healing points and the corresponding percentage.
+        '''
         healing = 0
         healing_percentage = 0.0
         if move.category is MoveCategory.STATUS and move.heal > 0:
@@ -260,6 +314,13 @@ class BattleStatus:
 
     @staticmethod
     def compute_updated_boosts(att_poke: NodePokemon, def_poke: NodePokemon, move: Move):
+        '''
+        Updates the attacker and the defender statistic boost.
+        :param att_poke: a node representing the attributes of the defender Pokemon.
+        :param def_poke: a node representing the attributes of the attacker Pokemon.
+        :param move: a Pokemon move.
+        :return: the updated boosts
+        '''
         att_upd_boosts = att_poke.boosts.copy()
         def_upd_boosts = def_poke.boosts.copy()
         boosts = move.self_boost if move.boosts is None else move.boosts
