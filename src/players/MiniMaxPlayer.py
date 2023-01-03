@@ -203,14 +203,14 @@ class MiniMaxPlayer(Player):
     @staticmethod
     def hit_if_act_poke_can_outspeed(battle: AbstractBattle, terrains: list[Field], opp_max_hp: int,
                                      opp_conditions: list) -> tuple[bool, Move]:
-        '''
-        Compute a move that could defeat the opponent Pokemon if our Pokemon is faster.
+        """
+        Compute a move that could defeat the opponent pokémon if ours is faster.
         :param battle: current state of the battle.
         :param terrains: current active field in the battle.
-        :param opp_max_hp: max health points of the opponent Pokemon.
-        :param opp_conditions: the health state of the opponent Pokemon.
-        :return: a tuple that indicated whether a move can defeat the opponent Pokemon and the corresponding move.
-        '''
+        :param opp_max_hp: max health points of the opponent pokémon.
+        :param opp_conditions: the health state of the opponent pokémon.
+        :return: a tuple that indicated whether a move can defeat the opponent pokémon and the corresponding move.
+        """
         opp_hp = math.ceil(opp_max_hp * battle.opponent_active_pokemon.current_hp_fraction)
         for move in battle.available_moves:
             battle_status = BattleStatus(
@@ -242,12 +242,12 @@ class MiniMaxPlayer(Player):
         print()
 
     def get_best_move(self, battle: AbstractBattle, root_battle_status: BattleStatus) -> Pokemon | Move:
-        '''
-        Computes the best move or the best Pokemon to switch.
+        """
+        Computes the best move or the best pokémon to switch.
         :param battle: current state of the battle.
         :param root_battle_status: root node from which the minimax algorithm starts.
-        :return: the best move or the best Pokemon to switch.
-        '''
+        :return: the best move or the best pokémon to switch.
+        """
         ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
         node: BattleStatus = ris[1]
         best_move = self.choose_random_move(battle)  # il bot ha fatto U-turn e node diventava none
@@ -313,26 +313,26 @@ class MiniMaxPlayer(Player):
 
     @staticmethod
     def opponent_loose(node: BattleStatus) -> bool:
-        '''
+        """
         Checks whether the opponent player is defeated
         :param node: a node representing a game state.
         :return: a boolean indicating whether the opponent player is defeated.
-        '''
+        """
         return node.opp_poke.is_fainted() and len(node.opp_poke_avail_actions()) == 0
 
     @staticmethod
     def player_loose(node: BattleStatus) -> bool:
-        '''
+        """
         Checks whether our player is defeated
         :param node: a node representing a game state.
         :return: a boolean indicating whether our player is defeated.
-        '''
+        """
         return node.act_poke.is_fainted() and len(node.act_poke_avail_actions()) == 0
 
     def is_terminal_node(self, node: BattleStatus) -> bool:
-        '''
+        """
         Check if a node is a terminal node.
         :param node: a node representing a game state.
         :return: a boolean indicating whether a node is a terminal one.
-        '''
+        """
         return self.player_loose(node) or self.opponent_loose(node)

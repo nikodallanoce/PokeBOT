@@ -1,8 +1,8 @@
 from poke_env.environment import Pokemon, Move, MoveCategory, Weather, Field, Status
-
 from src.engine.useful_data import DEFAULT_MOVES_IDS
 from src.engine.stats import estimate_stat, compute_stat_modifiers, compute_stat_boost
 import copy
+
 
 class NodePokemon:
 
@@ -40,18 +40,18 @@ class NodePokemon:
             effects = pokemon.effects
         self.effects: dict = effects
 
-    def is_fainted(self)->bool:
-        '''
-        Computes if the Pokemon is fainted.
-        :return: true if the Pokemon is fainted, false otherwise.
-        '''
+    def is_fainted(self) -> bool:
+        """
+        Computes if the pokémon is fainted.
+        :return: true if the pokémon is fainted, false otherwise.
+        """
         return self.current_hp <= 0
 
     def clone_all(self):
-        '''
+        """
         Clones all the fields of the current object.
         :return: a copy of this object.
-        '''
+        """
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
                            self.moves.copy(), self.effects.copy())
 
@@ -59,10 +59,10 @@ class NodePokemon:
               status: Status = None,
               moves: list[Move] = None,
               effects: dict = None):
-        '''
+        """
         Clones the current object with the possibility of specifying some custom fields.
         :return: a copy of this object.
-        '''
+        """
         if is_act_poke is None:
             is_act_poke = self.is_act_poke
         if current_hp is None:
@@ -78,14 +78,12 @@ class NodePokemon:
         return NodePokemon(self.pokemon, is_act_poke, current_hp, boosts, status, moves, effects)
 
     def retrieve_stats(self, weather: Weather, terrains: list[Field]):
-
-        '''
-        Computes the current Pokemon statistics give the weather and the active terrains in a battle.
+        """
+        Computes the current pokémon statistics give the weather and the active terrains in a battle.
         :param weather: current active weather.
         :param terrains: current active terrains.
         :return:
-        '''
-
+        """
         computed_stats: dict[str, int] = self.pokemon.stats.copy()
         if not self.is_act_poke:
             computed_stats = self.pokemon.base_stats.copy()
@@ -98,13 +96,13 @@ class NodePokemon:
             computed_stats[stat] = int(computed_stats[stat] * compute_stat_boost(self.pokemon, stat, self.boosts[stat]))
 
     def enrich_moves(self, known_moves: list[Move]) -> list[Move]:
-        '''
-        Assigns default moves to a Pokemon with the same type of the Pokemon's ones if there are not known moves with
-        those type. If the known_moves have a different type with respect to this Pokemon, they are joined to the
+        """
+        Assigns default moves to a pokémon with the same type of the pokémon's ones if there are no known moves with
+        those type. If the known_moves have a different type with respect to this pokémon, they are joined to the
         default ones.
-        :param known_moves: some known moves of this Pokemon.
+        :param known_moves: some known moves of this pokémon.
         :return: a list of all the known moves plus the default ones.
-        '''
+        """
         moves_added: list[Move] = []
         for poke_type in iter(self.pokemon.types):
             if poke_type is not None:
@@ -119,5 +117,5 @@ class NodePokemon:
                         moves_added.append(DEFAULT_MOVES_IDS[poke_type][MoveCategory.PHYSICAL])
                     else:
                         moves_added.append(DEFAULT_MOVES_IDS[poke_type][MoveCategory.SPECIAL])
-                    #moves_added.append(def_move)
+                    # moves_added.append(def_move)
         return moves_added + known_moves
