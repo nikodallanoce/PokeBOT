@@ -6,7 +6,7 @@ class OpponentHPHeuristic(Heuristic):
 
     def compute(self, battle_node, depth: int) -> float:
         """
-        Evaluate state in the minimax algorithm using only the opponent's pokèmon health points
+        Evaluate state in the minimax algorithm using only the opponent's Pokèmon health points
         :param battle_node: minimax node containing the state information
         :param depth: depth of the node in the minimax tree
         :return: evaluation score of the minimax node

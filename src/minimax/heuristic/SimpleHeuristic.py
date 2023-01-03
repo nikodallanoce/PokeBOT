@@ -7,7 +7,7 @@ class SimpleHeuristic(Heuristic):
 
     def compute(self, battle_node: BattleStatus, depth: int) -> float:
         """
-        Evaluate state in the minimax algorithm using only the knowledge of the two active pokémon in the battle
+        Evaluate state in the minimax algorithm using only the knowledge of the two active Pokémon in the battle
         :param battle_node: minimax node containing the state information
         :param depth: depth of the node in the minimax tree
         :return: evaluation score of the minimax node
