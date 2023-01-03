@@ -10,6 +10,13 @@ async def send_player_on_ladder(player: Player,
                                 n_matches: int = 10,
                                 verbose: bool = False,
                                 save_results: bool = False) -> None:
+    """
+    Let the bot play on online classified matches.
+    :param player: the player we want to send on the ladder
+    :param n_matches: the number of matches the bot will play
+    :param verbose: print useful infos
+    :param save_results: save the results in a csv file
+    """
     for i in range(n_matches):
         # Save useful data
         await player.ladder(1)
@@ -40,6 +47,14 @@ async def challenge_player(player: Player,
                            n_matches: int = 10,
                            verbose: bool = False,
                            save_results: bool = False) -> None:
+    """
+    Let the bot challenge a player on the remote server.
+    :param player: the chosen player
+    :param opponent: the opponent's name
+    :param n_matches: the number of matches the bot will play
+    :param verbose: print useful infos
+    :param save_results: save the results in a csv file
+    """
     await player.accept_challenges(opponent, n_matches)
 
     # Save useful data
@@ -60,6 +75,12 @@ async def challenge_player(player: Player,
 
 
 async def evaluate_players_locally(players: List[Player], n_matches: int = 100, save_results: bool = False) -> None:
+    """
+    Test the various bot's playstyles on a local server.
+    :param players: list of players we want to test
+    :param n_matches: the number of matches the players will play against each other
+    :param save_results: save the results in a csv file
+    """
     # Let the players challenge each other
     cross_evaluation = await cross_evaluate(players, n_challenges=n_matches)
 
@@ -76,6 +97,11 @@ async def evaluate_players_locally(players: List[Player], n_matches: int = 100, 
 
 
 def types_to_string(pokemon_types: Union[Pokemon, Tuple[PokemonType, PokemonType | None]]) -> str:
+    """
+    Translate a pokémon's types into a string.
+    :param pokemon_types: pokémon under consideration or a tuple of types
+    :return: String of a pokémon types.
+    """
     if issubclass(type(pokemon_types), Pokemon):
         types = pokemon_types.types
     else:
@@ -87,6 +113,11 @@ def types_to_string(pokemon_types: Union[Pokemon, Tuple[PokemonType, PokemonType
 
 
 def matchups_to_string(matchups: Dict[Pokemon, float]) -> str:
+    """
+    Translate a matchup dict into a string.
+    :param matchups: dict of matchup values
+    :return: String of matchup values.
+    """
     team = ""
     for i, team_matchup in enumerate(matchups.items()):
         team_pokemon, pokemon_matchup = team_matchup
