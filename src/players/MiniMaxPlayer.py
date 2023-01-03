@@ -2,16 +2,16 @@ from poke_env import PlayerConfiguration, ServerConfiguration
 from poke_env.environment import Status, Gen8Move
 from poke_env.player import Player
 from poke_env.teambuilder import Teambuilder
-from src.utilities.BattleStatus import BattleStatus
-from src.utilities.Heuristic import Heuristic
-from src.utilities.NodePokemon import NodePokemon
+from src.minimax.BattleStatus import BattleStatus
+from src.minimax.heuristic.Heuristic import Heuristic
+from src.minimax.NodePokemon import NodePokemon
 from src.engine.battle_utilities import *
 from src.engine.stats import compute_stat
 from src.strategy.gimmick import should_dynamax
 from src.strategy.matchup import matchup_on_types
 from src.strategy.switch import should_switch, compute_best_switch
-from src.utilities.SimpleHeuristic import SimpleHeuristic
-from src.utilities.utilities import matchups_to_string
+from src.minimax.heuristic.SimpleHeuristic import SimpleHeuristic
+from src.utilities import matchups_to_string
 from src.engine.damage import compute_damage
 from typing import Optional, Union, Tuple
 import math
@@ -63,8 +63,8 @@ class MiniMaxPlayer(Player):
                     if not pokemon.active and not pokemon.fainted]
 
         # Retrieve all the pokémon in the opponent's team
-        opp_team_pokemon = 6 - len([pokemon for pokemon in battle.opponent_team.values()
-                                    if not pokemon.active and pokemon.fainted])
+        '''opp_team_pokemon = 6 - len([pokemon for pokemon in battle.opponent_team.values()
+                                    if not pokemon.active and pokemon.fainted])'''
 
         # Retrieve weather, terrains and side conditions
         weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
@@ -72,7 +72,7 @@ class MiniMaxPlayer(Player):
         # Compute the hp of both pokémon
         # bot_hp = bot_pokemon.current_hp
         opp_max_hp = compute_stat(opp_pokemon, "hp", weather, terrains)
-        opp_hp = int(opp_max_hp * opp_pokemon.current_hp_fraction)
+        # opp_hp = int(opp_max_hp * opp_pokemon.current_hp_fraction)
 
         best_switch, bot_matchup, outspeed_p, team_matchups = self.best_switch_on_matchup(battle, bot_pokemon, bot_team,
                                                                                           opp_pokemon, terrains,
@@ -167,42 +167,9 @@ class MiniMaxPlayer(Player):
 
         return best_switch, bot_matchup, outspeed_p, team_matchups
 
-    '''def choose_move_old(self, battle):
-        if battle.turn == 1:
-            self.best_stats_pokemon = max([sum(pokemon.base_stats.values()) for pokemon in battle.team.values()])
-        
-        weather, terrains, bot_conditions, opp_conditions = retrieve_battle_status(battle).values()
-        opp_max_hp = compute_stat(battle.opponent_active_pokemon, "hp", weather, terrains)
-        opp_team = [poke for poke in battle.opponent_team.values() if poke.status != Status.FNT and not poke.active]
-        avail_switches = battle.available_switches
-
-        available_moves = battle.available_moves
-        available_moves.sort(reverse=True, key=lambda x: int(x.base_power))
-        root_battle_status = BattleStatus(
-            NodePokemon(battle.active_pokemon, is_act_poke=True, moves=available_moves),
-            NodePokemon(battle.opponent_active_pokemon, is_act_poke=False, current_hp=opp_max_hp,
-                        moves=list(battle.opponent_active_pokemon.moves.values())),
-            avail_switches, opp_team, battle.weather, terrains,
-            opp_conditions, None, Gen8Move('splash'), True)
-
-        can_defeat, best_move = False, Gen8Move('splash')
-        if root_battle_status.move_first and len(battle.available_moves) > 0:
-            can_defeat, best_move = self.hit_if_act_poke_can_outspeed(battle, terrains, opp_max_hp, opp_conditions)
-        if len(battle.available_moves) == 0 or can_defeat is not True:
-            best_move = self.get_best_move(battle, root_battle_status)
-        dynamax: bool = False
-        my_team = [poke for poke in list(battle.team.values()) if poke.status != Status.FNT and not poke.active]
-        if battle.can_dynamax and not isinstance(best_move, Pokemon):
-            dynamax = self.should_dynamax(battle.active_pokemon, my_team)
-        
-        if self.verbose:
-            self.print_chosen_move(battle, best_move, opp_conditions, terrains, weather)
-
-        return self.create_order(best_move, dynamax=dynamax)'''
-
     @staticmethod
-    def hit_if_act_poke_can_outspeed(battle: AbstractBattle, terrains: list[Field], opp_max_hp: int,
-                                     opp_conditions: list) -> tuple[bool, Move]:
+    def hit_if_act_poke_can_outspeed(battle: AbstractBattle, terrains: List[Field], opp_max_hp: int,
+                                     opp_conditions: List) -> Tuple[bool, Move]:
         """
         Compute a move that could defeat the opponent pokémon if ours is faster.
         :param battle: current state of the battle.

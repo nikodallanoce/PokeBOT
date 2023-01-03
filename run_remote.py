@@ -5,8 +5,8 @@ from poke_env import PlayerConfiguration, ShowdownServerConfiguration
 from src.players.baseline_player import MaxBasePowerPlayer, BestDamagePlayer
 from src.players.RuleBasedPlayer import RuleBasedPlayer
 from src.players.MiniMaxPlayer import MiniMaxPlayer
-from src.utilities.utilities import challenge_player, send_player_on_ladder
-from src.utilities.TeamHeuristic import TeamHeuristic
+from src.utilities import challenge_player, send_player_on_ladder
+from src.minimax.heuristic.TeamHeuristic import TeamHeuristic
 
 
 def parse_arguments(known=False):
@@ -39,7 +39,8 @@ async def run_bot_online():
 
     player_config = PlayerConfiguration(bot_username, bot_password)
     if playstyle == "MBP":
-        player = MaxBasePowerPlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
+        player = MaxBasePowerPlayer(player_configuration=player_config,
+                                    server_configuration=ShowdownServerConfiguration)
     elif playstyle == "BD":
         player = BestDamagePlayer(player_configuration=player_config, server_configuration=ShowdownServerConfiguration)
     elif playstyle == "RB":

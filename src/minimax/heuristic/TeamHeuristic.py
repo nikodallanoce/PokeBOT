@@ -1,5 +1,6 @@
-from src.utilities.BattleStatus import BattleStatus
-from src.utilities.Heuristic import Heuristic
+from typing import List
+from src.minimax.BattleStatus import BattleStatus
+from src.minimax.heuristic.Heuristic import Heuristic
 from src.engine.stats import estimate_stat
 import numpy as np
 
@@ -10,10 +11,10 @@ BEST_PENALTY = 0.036475451823316817
 
 class TeamHeuristic(Heuristic):
 
-    def __init__(self, parameters: list[float] = None, penalty: float = BEST_PENALTY):
+    def __init__(self, parameters: List[float] = None, penalty: float = BEST_PENALTY):
         super(TeamHeuristic, self).__init__()
         self.parameters_num = 4
-        self.parameters: list[float] = BEST_PARAMETERS if parameters is None else parameters
+        self.parameters: List[float] = BEST_PARAMETERS if parameters is None else parameters
         self.parameters = np.array(self.parameters)
         self.penalty: float = penalty
 
@@ -30,7 +31,7 @@ class TeamHeuristic(Heuristic):
 
         opp_hp = battle_node.opp_poke.current_hp
         opp_max_hp = estimate_stat(battle_node.opp_poke.pokemon, "hp")
-        #opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
+        # opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
         opp_team_len = 0
 
         b1 = self.parameters[0]

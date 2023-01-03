@@ -1,5 +1,5 @@
-from src.utilities.BattleStatus import BattleStatus
-from src.utilities.Heuristic import Heuristic
+from src.minimax.BattleStatus import BattleStatus
+from src.minimax.heuristic.Heuristic import Heuristic
 from src.engine.stats import estimate_stat
 
 

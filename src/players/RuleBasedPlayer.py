@@ -9,7 +9,7 @@ from src.engine.damage import compute_damage
 from src.strategy.gimmick import should_dynamax
 from src.strategy.matchup import matchup_on_types
 from src.strategy.switch import should_switch, compute_best_switch
-from src.utilities.utilities import matchups_to_string
+from src.utilities import matchups_to_string
 from typing import Optional, Union
 
 
@@ -47,8 +47,8 @@ class RuleBasedPlayer(Player):
     def __compute_opponent_damage(bot_pokemon: Pokemon,
                                   opp_pokemon: Pokemon,
                                   weather: Weather,
-                                  terrains: list[Field],
-                                  bot_conditions: list[SideCondition]) -> int:
+                                  terrains: List[Field],
+                                  bot_conditions: List[SideCondition]) -> int:
         # Retrieve all the non-status moves
         opp_damage = [opp_move for opp_move in opp_pokemon.moves.values()
                       if opp_move.category is not MoveCategory.STATUS]
@@ -100,9 +100,9 @@ class RuleBasedPlayer(Player):
         # Retrieve weather, terrains and side conditions
         battle_status = retrieve_battle_status(battle)
         weather: Weather = battle_status["weather"]
-        terrains: list[Field] = battle_status["terrains"]
-        bot_conditions: list[SideCondition] = battle_status["bot_conditions"]
-        opp_conditions: list[SideCondition] = battle_status["opp_conditions"]
+        terrains: List[Field] = battle_status["terrains"]
+        bot_conditions: List[SideCondition] = battle_status["bot_conditions"]
+        opp_conditions: List[SideCondition] = battle_status["opp_conditions"]
 
         # Compute the best pokémon the bot can switch to
         self.max_team_matchup = max(team_matchups.values()) if len(team_matchups) > 0 else -8
@@ -224,7 +224,7 @@ class RuleBasedPlayer(Player):
                 return self.create_order(best_damage_move)
 
             # If the current pokémon can defeat the opponent with a priority move, then use it
-            priority_moves: dict[Move, int] = {move: infos["damage_lb"] for move, infos in bot_damage_moves.items()
+            priority_moves: Dict[Move, int] = {move: infos["damage_lb"] for move, infos in bot_damage_moves.items()
                                                if infos["damage_lb"] > 0 and infos["priority"] > 0}
             for priority_move, damage in priority_moves.items():
                 if damage > opp_hp:

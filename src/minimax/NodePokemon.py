@@ -1,3 +1,4 @@
+from typing import List, Dict
 from poke_env.environment import Pokemon, Move, MoveCategory, Weather, Field, Status
 from src.engine.useful_data import DEFAULT_MOVES_IDS
 from src.engine.stats import estimate_stat, compute_stat_modifiers, compute_stat_boost
@@ -6,9 +7,14 @@ import copy
 
 class NodePokemon:
 
-    def __init__(self, pokemon: Pokemon, is_act_poke: bool, current_hp: int = None,
-                 boosts: dict[str, int] = None,
-                 status: Status = None, moves: list[Move] = None, effects: dict = None):
+    def __init__(self,
+                 pokemon: Pokemon,
+                 is_act_poke: bool,
+                 current_hp: int = None,
+                 boosts: Dict[str, int] = None,
+                 status: Status = None,
+                 moves: List[Move] = None,
+                 effects: Dict = None):
         self.pokemon: Pokemon = pokemon
         self.poke = copy.deepcopy(pokemon)
         self.is_act_poke: bool = is_act_poke
@@ -24,21 +30,21 @@ class NodePokemon:
 
         if boosts is None:
             boosts = pokemon.boosts
-        self.boosts: dict[str, int] = boosts
+        self.boosts: Dict[str, int] = boosts
 
         if status is None:
             status = pokemon.status
         self.status: Status = status
 
         if is_act_poke or len(moves) == 4:
-            self.moves: list[Move] = list(moves)
+            self.moves: List[Move] = list(moves)
         elif not is_act_poke:
-            self.moves: list[Move] = self.enrich_moves(list(moves))
+            self.moves: List[Move] = self.enrich_moves(list(moves))
         assert self.moves is not None
 
         if effects is None:
             effects = pokemon.effects
-        self.effects: dict = effects
+        self.effects: Dict = effects
 
     def is_fainted(self) -> bool:
         """
@@ -55,10 +61,13 @@ class NodePokemon:
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
                            self.moves.copy(), self.effects.copy())
 
-    def clone(self, is_act_poke: bool = None, current_hp: int = None, boosts: dict[str, int] = None,
+    def clone(self,
+              is_act_poke: bool = None,
+              current_hp: int = None,
+              boosts: Dict[str, int] = None,
               status: Status = None,
               moves: list[Move] = None,
-              effects: dict = None):
+              effects: Dict = None):
         """
         Clones the current object with the possibility of specifying some custom fields.
         :return: a copy of this object.
@@ -77,12 +86,11 @@ class NodePokemon:
             effects = self.effects.copy()
         return NodePokemon(self.pokemon, is_act_poke, current_hp, boosts, status, moves, effects)
 
-    def retrieve_stats(self, weather: Weather, terrains: list[Field]):
+    def retrieve_stats(self, weather: Weather, terrains: List[Field]):
         """
         Computes the current pokémon statistics give the weather and the active terrains in a battle.
         :param weather: current active weather.
         :param terrains: current active terrains.
-        :return:
         """
         computed_stats: dict[str, int] = self.pokemon.stats.copy()
         if not self.is_act_poke:
@@ -95,7 +103,7 @@ class NodePokemon:
                 computed_stats[stat] * compute_stat_modifiers(self.pokemon, stat, weather, terrains))
             computed_stats[stat] = int(computed_stats[stat] * compute_stat_boost(self.pokemon, stat, self.boosts[stat]))
 
-    def enrich_moves(self, known_moves: list[Move]) -> list[Move]:
+    def enrich_moves(self, known_moves: List[Move]) -> List[Move]:
         """
         Assigns default moves to a pokémon with the same type of the pokémon's ones if there are no known moves with
         those type. If the known_moves have a different type with respect to this pokémon, they are joined to the
@@ -103,7 +111,7 @@ class NodePokemon:
         :param known_moves: some known moves of this pokémon.
         :return: a list of all the known moves plus the default ones.
         """
-        moves_added: list[Move] = []
+        moves_added: List[Move] = []
         for poke_type in iter(self.pokemon.types):
             if poke_type is not None:
                 move_same_poke_type = False

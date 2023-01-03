@@ -1,9 +1,7 @@
 import math
-from typing import List
-
 from poke_env.environment import SideCondition
-from src.utilities.Heuristic import Heuristic
-from src.utilities.NodePokemon import NodePokemon
+from src.minimax.heuristic.Heuristic import Heuristic
+from src.minimax.NodePokemon import NodePokemon
 from src.engine.damage import compute_damage
 from src.engine.useful_data import HEALING_MOVES
 from src.engine.battle_utilities import *
@@ -14,14 +12,14 @@ class BattleStatus:
     last_id: int = 0
 
     def __init__(self, act_poke: NodePokemon, opp_poke: NodePokemon,
-                 avail_switches: list[Pokemon],
-                 opp_team: list[Pokemon],
-                 weather: dict[Weather, int], terrains: list[Field], opp_conditions: list[SideCondition], ancestor,
+                 avail_switches: List[Pokemon],
+                 opp_team: List[Pokemon],
+                 weather: Dict[Weather, int], terrains: List[Field], opp_conditions: List[SideCondition], ancestor,
                  move: Move | Pokemon, poke_switched: bool):
         self.act_poke: NodePokemon = act_poke
         self.opp_poke: NodePokemon = opp_poke
-        self.avail_switches: list[Pokemon] = avail_switches
-        self.opp_team: list[Pokemon] = opp_team
+        self.avail_switches: List[Pokemon] = avail_switches
+        self.opp_team: List[Pokemon] = opp_team
         self.weather = weather
         self.terrains = terrains
         self.opp_conditions = opp_conditions
@@ -44,20 +42,22 @@ class BattleStatus:
         """
         # outspeed_p = outspeed_prob(self.act_poke.pokemon, self.opp_poke.pokemon)["outspeed_p"]
 
-        all_actions: list[Move | Pokemon] = []  # self.avail_switches
+        all_actions: List[Move | Pokemon] = []  # self.avail_switches
         if not self.act_poke.is_fainted() and len(self.act_poke.moves) > 0:
             all_actions = self.act_poke.moves + all_actions
+
         return all_actions
 
-    def opp_poke_avail_actions(self) -> list[Move | Pokemon]:
+    def opp_poke_avail_actions(self) -> List[Move | Pokemon]:
         """
         Computes all the actions that the opponent player can do.
         :return: a list containing all the available actions.
         """
         # all_moves = list[Move | Pokemon]
-        all_actions: list[Move | Pokemon] = []  # self.opp_team
+        all_actions: List[Move | Pokemon] = []  # self.opp_team
         if not self.opp_poke.is_fainted():
             all_actions = self.opp_poke.moves + all_actions
+
         return all_actions
 
     def compute_score(self, heuristic: Heuristic, depth: int):
@@ -109,9 +109,7 @@ class BattleStatus:
                                      self.avail_switches, self.opp_team, self.weather, self.terrains,
                                      self.opp_conditions, self, move, True)
             return child
-
         else:
-
             if isinstance(move, Move):
                 damage = compute_damage(move, self.opp_poke.pokemon, self.act_poke.pokemon, weather, self.terrains,
                                         self.opp_conditions, self.opp_poke.boosts, self.act_poke.boosts, is_my_turn)[
@@ -123,8 +121,10 @@ class BattleStatus:
                 act_poke_upd_hp = self.opp_poke.current_hp
                 heal, _ = self.compute_healing(self.opp_poke, move, weather, self.terrains)
                 act_poke_upd_hp += heal
+
                 recoil: int = self.compute_recoil(self.opp_poke, move, damage)
                 act_poke_upd_hp -= recoil
+
                 drain, _ = self.compute_drain(self.act_poke, move, damage)
                 act_poke_upd_hp += drain
 
@@ -153,8 +153,8 @@ class BattleStatus:
             "outspeed_p"]
         return outspeed_p < threshold
 
-    def remove_poke_from_switches(self, poke: NodePokemon, team: list[Pokemon]):
-        new_team: list[Pokemon] = team
+    def remove_poke_from_switches(self, poke: NodePokemon, team: List[Pokemon]):
+        new_team: List[Pokemon] = team
         if poke.is_fainted() and not poke.pokemon.active:
             new_team = team.copy()
             new_team.remove(poke.pokemon)
@@ -176,7 +176,7 @@ class BattleStatus:
         return damage
 
     def get_active_weather(self, move: Move, update_turn: bool):
-        act_weather: dict[Weather, int] = self.weather
+        act_weather: Dict[Weather, int] = self.weather
         if len(act_weather) > 0 and update_turn:
             act_weather = self.weather.copy()
             for key, val in act_weather.items():
@@ -184,18 +184,20 @@ class BattleStatus:
                     act_weather[key] = val + 1
                 else:
                     act_weather = {}
+
         if move.weather is not None:
             act_weather = {move.weather: 1}
+
         return act_weather
 
     @staticmethod
-    def clone_poke_list(poke_list: list[NodePokemon]):
+    def clone_poke_list(poke_list: List[NodePokemon]):
         """
         Creates a new list that contains all the pokémon cloned.
         :param poke_list: a list of pokémon.
         :return: the clone list.
         """
-        cloned_list: list[NodePokemon] = []
+        cloned_list: List[NodePokemon] = []
         for elem in poke_list:
             cloned_list.append(elem.clone_all())
         return cloned_list
@@ -245,7 +247,7 @@ class BattleStatus:
     def compute_healing(poke: NodePokemon,
                         move: Move,
                         weather: Weather = None,
-                        terrains: list[Field] = None) -> (int, float):
+                        terrains: List[Field] = None) -> (int, float):
         """
         Computes the healing health points that a move could return.
         :param poke: a node representing the attributes of a pokémon.

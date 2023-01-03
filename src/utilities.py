@@ -1,6 +1,6 @@
 from poke_env.player import Player, cross_evaluate
 from poke_env.environment import Pokemon, PokemonType
-from typing import Union
+from typing import Union, List, Tuple, Dict
 from tabulate import tabulate
 import os
 import pandas as pd
@@ -59,7 +59,7 @@ async def challenge_player(player: Player,
         df_ratings.to_csv("bot_data/{0}_{1}.csv".format(player_type, player.username))
 
 
-async def evaluate_players_locally(players: list[Player], n_matches: int = 100, save_results: bool = False) -> None:
+async def evaluate_players_locally(players: List[Player], n_matches: int = 100, save_results: bool = False) -> None:
     # Let the players challenge each other
     cross_evaluation = await cross_evaluate(players, n_challenges=n_matches)
 
@@ -75,7 +75,7 @@ async def evaluate_players_locally(players: list[Player], n_matches: int = 100, 
         df_results.to_csv("bot_data/local_results_{0}_matches.csv".format(n_matches))
 
 
-def types_to_string(pokemon_types: Union[Pokemon, tuple[PokemonType, PokemonType | None]]) -> str:
+def types_to_string(pokemon_types: Union[Pokemon, Tuple[PokemonType, PokemonType | None]]) -> str:
     if issubclass(type(pokemon_types), Pokemon):
         types = pokemon_types.types
     else:
@@ -86,7 +86,7 @@ def types_to_string(pokemon_types: Union[Pokemon, tuple[PokemonType, PokemonType
     return types
 
 
-def matchups_to_string(matchups: dict[Pokemon, float]) -> str:
+def matchups_to_string(matchups: Dict[Pokemon, float]) -> str:
     team = ""
     for i, team_matchup in enumerate(matchups.items()):
         team_pokemon, pokemon_matchup = team_matchup

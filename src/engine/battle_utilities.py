@@ -1,16 +1,17 @@
+from typing import List, Dict
 from poke_env.environment import Pokemon, Move, Weather, Field, AbstractBattle
 from poke_env.environment.move_category import MoveCategory
 from src.engine.stats import compute_stat, stats_to_string
-from src.utilities.utilities import types_to_string
+from src.utilities import types_to_string
 
 
 def outspeed_prob(bot_pokemon: Pokemon,
                   opp_pokemon: Pokemon,
                   weather: Weather = None,
-                  terrains: list[Field] = None,
+                  terrains: List[Field] = None,
                   boost: int = None,
                   random_battle: bool = True,
-                  verbose: bool = False) -> dict[str, float]:
+                  verbose: bool = False) -> Dict[str, float]:
     """
     Computes the probability of outspeeding the opponent's pokémon.
     :param bot_pokemon: bot's active pokémon
@@ -70,7 +71,7 @@ def compute_move_accuracy(move: Move,
                           attacker: Pokemon,
                           defender: Pokemon,
                           weather: Weather = None,
-                          terrains: list[Field] = None,
+                          terrains: List[Field] = None,
                           attacker_accuracy_boost: int = None,
                           defender_evasion_boost: int = None,
                           verbose: bool = False) -> float:
@@ -136,7 +137,7 @@ def compute_move_accuracy(move: Move,
     return round(move_accuracy, 2)
 
 
-def retrieve_battle_status(battle: AbstractBattle) -> dict:
+def retrieve_battle_status(battle: AbstractBattle) -> Dict:
     """
     Retrieves some infos about the current battle.
     :param battle: battle under consideration
@@ -153,7 +154,7 @@ def retrieve_battle_status(battle: AbstractBattle) -> dict:
             "opp_conditions": opp_conditions}
 
 
-def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: Weather, terrains: list[Field]) -> str:
+def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: Weather, terrains: List[Field]) -> str:
     """
     Builds a string that contains the main infos of a battle turn from the bot's viewpoint.
     :param bot_pokemon: bot's pokémon

@@ -1,3 +1,4 @@
+from typing import List
 from poke_env.environment import Pokemon, Move, Weather, Field
 from poke_env.environment.pokemon_type import PokemonType
 from src.engine.useful_data import STATUS_CONDITIONS, HEALING_MOVES
@@ -51,7 +52,7 @@ def compute_healing(attacker: Pokemon,
                     defender: Pokemon,
                     move: Move,
                     weather: Weather = None,
-                    terrains: list[Field] = None,
+                    terrains: List[Field] = None,
                     is_bot: bool = False) -> (int, float):
     """
     Compute the healing dealt by a move.

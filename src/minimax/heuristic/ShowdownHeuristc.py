@@ -1,5 +1,5 @@
-from src.utilities.BattleStatus import BattleStatus
-from src.utilities.Heuristic import Heuristic
+from src.minimax.BattleStatus import BattleStatus
+from src.minimax.heuristic.Heuristic import Heuristic
 from src.engine.stats import estimate_stat
 
 
@@ -7,7 +7,6 @@ class ShowdownHeuristic(Heuristic):
     """
     More info: https://ieeexplore.ieee.org/abstract/document/8080435
     """
-
     def compute(self, battle_node: BattleStatus, depth: int) -> float:
         bot_hp = battle_node.act_poke.current_hp
         opp_hp = battle_node.opp_poke.current_hp

@@ -1,7 +1,7 @@
 from poke_env.environment import Pokemon, Weather, Field, Status, PokemonType, Effect
 from poke_env.data import NATURES
 from src.engine.useful_data import STATUS_CONDITIONS
-from typing import Union
+from typing import Union, List
 
 
 def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nature: str = "neutral") -> int:
@@ -122,7 +122,7 @@ def __compute_atk_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     return atk_modifier
 
 
-def __compute_def_modifiers(pokemon: Pokemon, terrains: list[Field] = None) -> float:
+def __compute_def_modifiers(pokemon: Pokemon, terrains: List[Field] = None) -> float:
     def_modifier = 1
 
     # Pokémon with the "grass pelt" ability have their defense increased under grassy terrain
@@ -192,7 +192,7 @@ def __compute_spd_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     return spd_modifier
 
 
-def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains: list[Field] = None) -> float:
+def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains: List[Field] = None) -> float:
     spe_modifier = 1
 
     # Pokémon with the "swift swim" ability have their speed doubled under rainy weather
@@ -282,7 +282,7 @@ def __compute_evasion_modifiers(pokemon: Pokemon, weather: Weather = None) -> fl
     return evasion_modifier
 
 
-def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None, terrains: list[Field] = None) -> float:
+def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None, terrains: List[Field] = None) -> float:
     """
     Compute all the modifiers for a pokémon's stat coming from abilities, items, weather and terrains.
     :param pokemon: the pokémon under consideration
@@ -313,7 +313,7 @@ def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None,
 def compute_stat(pokemon: Pokemon,
                  stat: str,
                  weather: Weather = None,
-                 terrains: list[Field] = None,
+                 terrains: List[Field] = None,
                  is_bot: bool = False,
                  ivs: int = 31,
                  evs: int = 84,
@@ -353,9 +353,9 @@ def compute_stat(pokemon: Pokemon,
 
 
 def stats_to_string(pokemon: Pokemon,
-                    stats: list[str],
+                    stats: List[str],
                     weather: Weather = None,
-                    terrains: list[Field] = None,
+                    terrains: List[Field] = None,
                     is_bot: bool = False) -> str:
     """
     Builds a String with all the pokémon's stats by computing their actual value.

@@ -5,7 +5,7 @@ from src.engine.stats import compute_stat
 from src.engine.base_power import compute_base_power
 from src.engine.useful_data import IGNORE_EFFECT_ABILITIES_IDS
 from src.engine.move_effects import move_changes_type
-from typing import Union
+from typing import Union, List, Dict
 
 
 def move_fixed_damage(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> (bool, int):
@@ -60,7 +60,7 @@ def compute_other_damage_modifiers(move: Move,
                                    attacker: Pokemon,
                                    defender: Pokemon,
                                    weather: Weather,
-                                   defender_conditions: list[SideCondition]) -> float:
+                                   defender_conditions: List[SideCondition]) -> float:
     """
     Computes the damage modifier considering various battle parameters.
     :param move: move under consideration
@@ -211,12 +211,12 @@ def compute_damage(move: Move,
                    attacker: Pokemon,
                    defender: Pokemon,
                    weather: Weather = None,
-                   terrains: list[Field] = None,
-                   defender_conditions: list[SideCondition] = None,
-                   attacker_boosts: dict[str, int] = None,
-                   defender_boosts: dict[str, int] = None,
+                   terrains: List[Field] = None,
+                   defender_conditions: List[SideCondition] = None,
+                   attacker_boosts: Dict[str, int] = None,
+                   defender_boosts: Dict[str, int] = None,
                    is_bot: bool = False,
-                   verbose: bool = False) -> dict[str, Union[int | PokemonType]]:
+                   verbose: bool = False) -> Dict[str, Union[int | PokemonType]]:
     """
     Computes the damage dealt by a move.
     :param move: move under consideration

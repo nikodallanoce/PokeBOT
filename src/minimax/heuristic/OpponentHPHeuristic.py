@@ -1,4 +1,4 @@
-from src.utilities.Heuristic import Heuristic
+from src.minimax.heuristic.Heuristic import Heuristic
 from src.engine.stats import estimate_stat
 
 

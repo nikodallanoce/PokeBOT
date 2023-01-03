@@ -1,8 +1,9 @@
+from typing import List
 from poke_env.environment import Pokemon
 
 
 def should_dynamax(bot_pokemon: Pokemon,
-                   bot_team: list[Pokemon],
+                   bot_team: List[Pokemon],
                    matchup: float,
                    max_team_matchup: float = None,
                    best_stats_pokemon: int = None) -> bool:
