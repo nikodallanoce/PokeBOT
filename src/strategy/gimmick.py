@@ -8,25 +8,25 @@ def should_dynamax(bot_pokemon: Pokemon,
                    max_team_matchup: float = None,
                    best_stats_pokemon: int = None) -> bool:
     """
-    Define a simple dynamax strategy considering both active pokémon and the current matchup.
-    :param bot_pokemon: the bot's pokémon
-    :param bot_team: the bot's not fainted pokémon excluding the active one
-    :param matchup: the current pokémon matchup value
+    Define a simple dynamax strategy considering both active Pokémon and the current matchup
+    :param bot_pokemon: the bot's Pokémon
+    :param bot_team: the bot's not fainted Pokémon excluding the active one
+    :param matchup: the current Pokémon's matchup value
     :param max_team_matchup: the highest matchup value in the bot's team
-    :param best_stats_pokemon: the sum of the best pokémon's stats
-    :return: if the bot should use the dynamax gimmick or not
+    :param best_stats_pokemon: the sum of the best Pokémon's stats
+    :return: If the bot should use the dynamax gimmick or not
     """
-    # If the pokèmon is the last one alive, use the dynamax
+    # If the Pokèmon is the last one alive, use the dynamax
     if len(bot_team) == 0:
         return True
 
-    # If the current pokèmon is the best one in terms of base stats and the matchup is favorable, then dynamax
+    # If the current Pokèmon is the best one in terms of base stats and the matchup is favorable, then dynamax
     if sum(bot_pokemon.base_stats.values()) == best_stats_pokemon \
             and matchup >= 1 and bot_pokemon.current_hp_fraction >= 0.8:
         return True
 
     if bot_pokemon.current_hp_fraction == 1:
-        # If the current pokèmon is the last one at full hp, use dynamax on it
+        # If the current Pokèmon is the last one at full hp, use dynamax on it
         if len([pokemon for pokemon in bot_team if pokemon.current_hp_fraction == 1]) == 0:
             return True
         else:

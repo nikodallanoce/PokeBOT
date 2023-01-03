@@ -6,15 +6,15 @@ from typing import Union, List
 
 def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nature: str = "neutral") -> int:
     """
-    Estimate the stat of a pokémon without considering boosts and modifiers. This method should be used only for
-    estimating the stats of the opponent's pokémon since you can know your active pokémon stats by using the attribute
-    with the same name. The method will not work for the "accuracy" and "evasion" stats.
-    :param pokemon: the pokémon under consideration
+    Estimate the stat of a Pokémon without considering boosts and modifiers. This method should be used only for
+    estimating the stats of the opponent's Pokémon since you can know your active Pokémon stats by using the attribute
+    with the same name. The method will not work for the "accuracy" and "evasion" stats
+    :param pokemon: the Pokémon under consideration
     :param stat: the stat we want to estimate
     :param ivs: individual values for the stat
     :param evs: effort values for the stat
-    :param nature: the pokémon's nature
-    :return: an estimation of a pokémon's stat
+    :param nature: the Pokémon's nature
+    :return: an estimation of a Pokémon's stat
     """
     if stat not in list(pokemon.base_stats.keys()) and stat not in ["accuracy", "evasion"]:
         raise ValueError
@@ -46,10 +46,10 @@ def estimate_stat(pokemon: Pokemon, stat: str, ivs: int = 31, evs: int = 84, nat
 
 def compute_stat_boost(pokemon: Pokemon, stat: str, boost: Union[int | None] = None) -> float:
     """
-    Compute the boost to a pokémon stat. This method computes the actual boost and not the number of stages,
-    for the latter you can just use the "boosts" attribute of a pokémon object. The method will not work for the
-    "accuracy" and "evasion" stats.
-    :param pokemon: the pokémon under consideration
+    Compute the boost to a Pokémon stat. This method computes the actual boost and not the number of stages,
+    for the latter you can just use the "boosts" attribute of a Pokémon object. The method will not work for the
+    "accuracy" and "evasion" stats
+    :param pokemon: the Pokémon under consideration
     :param stat: the stat we are considering
     :param boost: the stages we can force on the stat boost computation
     :return: the modifier to the stat that comes from its boosts
@@ -169,7 +169,7 @@ def __compute_spa_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
 def __compute_spd_modifiers(pokemon: Pokemon, weather: Weather = None) -> float:
     spd_modifier = 1
 
-    # Rock-type pokémon have their special defense increased under sandstorm
+    # Rock-type Pokémon have their special defense increased under sandstorm
     if PokemonType.ROCK in pokemon.types and weather is Weather.SANDSTORM:
         spd_modifier *= 1.5
 
@@ -231,7 +231,7 @@ def __compute_spe_modifiers(pokemon: Pokemon, weather: Weather = None, terrains:
     if pokemon.item == "heavyball":
         spe_modifier *= 0.5
 
-    # Paralyzed pokémon have their speed halved
+    # Paralyzed Pokémon have their speed halved
     if pokemon.status is Status.PAR:
         spe_modifier *= 0.5
 
@@ -284,12 +284,12 @@ def __compute_evasion_modifiers(pokemon: Pokemon, weather: Weather = None) -> fl
 
 def compute_stat_modifiers(pokemon: Pokemon, stat: str, weather: Weather = None, terrains: List[Field] = None) -> float:
     """
-    Compute all the modifiers for a pokémon's stat coming from abilities, items, weather and terrains.
-    :param pokemon: the pokémon under consideration
+    Compute all the modifiers for a Pokémon's stat coming from abilities, items, weather and terrains
+    :param pokemon: the Pokémon under consideration
     :param stat: the stat under consideration
     :param weather: the current weather
     :param terrains: the current terrains on the field
-    :return: the modifier to a pokémon's stat
+    :return: the modifier to a Pokémon's stat
     """
     match stat:
         case "atk":
@@ -320,16 +320,16 @@ def compute_stat(pokemon: Pokemon,
                  boost: int = None,
                  nature: str = "neutral") -> int:
     """
-    Compute the stat ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion") of a pokémon.
-    :param pokemon: the pokémon under consideration
+    Compute the stat ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion") of a Pokémon
+    :param pokemon: the Pokémon under consideration
     :param stat: the stat we want to compute
     :param weather: the current weather
     :param terrains: the current terrains on the field
-    :param is_bot: if the pokémon belongs to the bot
+    :param is_bot: if the Pokémon belongs to the bot
     :param ivs: individual values for the stat
     :param evs: effort values for the stat
     :param boost: boost's stages for the stat
-    :param nature: the pokémon's nature
+    :param nature: the Pokémon's nature
     :return: the actual stat value by taking into account the boost and all the modifiers
     """
     if ivs < 0 or ivs > 31 or evs < 0 or evs > 252:
@@ -358,13 +358,13 @@ def stats_to_string(pokemon: Pokemon,
                     terrains: List[Field] = None,
                     is_bot: bool = False) -> str:
     """
-    Builds a String with all the pokémon's stats by computing their actual value.
-    :param pokemon: the pokémon under consideration
+    Builds a String with all the Pokémon's stats by computing their actual value
+    :param pokemon: the Pokémon under consideration
     :param stats: the stats we want to consider
     :param weather: the current weather
     :param terrains: the current terrains on the field
-    :param is_bot: if the pokémon belongs to the bot
-    :return: String with all the desired stats and their actual values.
+    :param is_bot: if the Pokémon belongs to the bot
+    :return: String with all the desired stats and their actual values
     """
     stats_string = ""
     for i, stat in enumerate(stats):

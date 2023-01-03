@@ -13,17 +13,17 @@ def outspeed_prob(bot_pokemon: Pokemon,
                   random_battle: bool = True,
                   verbose: bool = False) -> Dict[str, float]:
     """
-    Computes the probability of outspeeding the opponent's pokémon.
-    :param bot_pokemon: bot's active pokémon
-    :param opp_pokemon: opponent's active pokémon
+    Computes the probability of outspeeding the opponent's Pokémon
+    :param bot_pokemon: bot's active Pokémon
+    :param opp_pokemon: opponent's active Pokémon
     :param weather: current battle weather
     :param terrains: current battle terrains
-    :param boost: bot's pokémon "spe" stat boost
+    :param boost: bot's Pokémon "spe" stat boost
     :param random_battle: whether the battle is a random battle or not
     :param verbose: print the computations
     :return: Outspeed probability, lower and upper bound of the opponent's "spe" stat
     """
-    # Compute the stats for both pokémon
+    # Compute the stats for both Pokémon
     bot_spe = compute_stat(bot_pokemon, "spe", weather, terrains, True, boost=boost)
     opp_moves = opp_pokemon.moves.keys()
     opp_spe_lb = compute_stat(opp_pokemon, "spe", weather, terrains, ivs=0, evs=0, boost=boost)
@@ -54,7 +54,7 @@ def outspeed_prob(bot_pokemon: Pokemon,
     elif bot_spe > opp_spe_ub:
         outspeed_p = 1
     elif opp_spe_lb == opp_spe_ub and opp_spe_ub == bot_spe:
-        # This will only happen when the bot knows that the opponent's pokémon has "trick room" or "gyro ball" and their
+        # This will only happen when the bot knows that the opponent's Pokémon has "trick room" or "gyro ball" and their
         # stats are the same
         outspeed_p = 0.5
     else:
@@ -76,16 +76,16 @@ def compute_move_accuracy(move: Move,
                           defender_evasion_boost: int = None,
                           verbose: bool = False) -> float:
     """
-    Computes the accuracy of a move.
+    Computes the accuracy of a move given various parameters
     :param move: move under consideration
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :param weather: current battle weather
     :param terrains: current battle terrains
     :param attacker_accuracy_boost: attacker's "accuracy" stat boost
     :param defender_evasion_boost: defender's "evasion" stat boost
     :param verbose: print the computations
-    :return: The accuracy of the move.
+    :return: The accuracy of the move
     """
     # Some moves can't miss by effect of the move itself or the "no guard" ability
     if move.accuracy is True or attacker.is_dynamaxed or attacker.ability == "noguard":
@@ -139,7 +139,7 @@ def compute_move_accuracy(move: Move,
 
 def retrieve_battle_status(battle: AbstractBattle) -> Dict:
     """
-    Retrieves some infos about the current battle.
+    Retrieves some infos about the current battle
     :param battle: battle under consideration
     :return: Weather, terrains and conditions on both sides
     """
@@ -156,7 +156,7 @@ def retrieve_battle_status(battle: AbstractBattle) -> Dict:
 
 def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: Weather, terrains: List[Field]) -> str:
     """
-    Builds a string that contains the main infos of a battle turn from the bot's viewpoint.
+    Builds a string that contains the main infos of a battle turn from the bot's viewpoint
     :param bot_pokemon: bot's pokémon
     :param opp_pokemon: opponent's pokémon
     :param weather: current battle weather
@@ -168,13 +168,13 @@ def bot_status_to_string(bot_pokemon: Pokemon, opp_pokemon: Pokemon, weather: We
     opp_max_hp = compute_stat(opp_pokemon, "hp", weather, terrains)
     opp_hp = int(opp_max_hp * opp_pokemon.current_hp_fraction)
 
-    bot_status = "Bot pokémon: {0}, Types: {1}, hp: {2}/{3}\n"\
+    bot_status = "Bot Pokémon: {0}, Types: {1}, hp: {2}/{3}\n"\
         .format(bot_pokemon.species, types_to_string(bot_pokemon.types), bot_hp, bot_max_hp)
     bot_status += "Ability: {0}, Item: {1}\n".format(bot_pokemon.ability, bot_pokemon.item)
     bot_stats = stats_to_string(bot_pokemon, list(bot_pokemon.stats.keys()), weather, terrains, True)
     bot_status += "Stats: {0}\n\n".format(bot_stats)
 
-    bot_status += "Opponent pokèmon: {0}, Types: {1}, hp: {2}/{3}\n"\
+    bot_status += "Opponent Pokèmon: {0}, Types: {1}, hp: {2}/{3}\n"\
         .format(opp_pokemon.species, types_to_string(opp_pokemon.types), opp_hp, opp_max_hp)
     if opp_pokemon.ability:
         opp_abilities = "Ability: {0}".format(opp_pokemon.ability)
