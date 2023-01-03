@@ -1,0 +1,8 @@
+\section{Introduction}\label{sec:introduction}
+In the AI field, games have always been given a soft spot since they are ideal as first tests for AI algorithms and they provide a variety of environments
+in which rules are well-defined and can be exploited in order to understand the complexity of such environments and how to apply the same reasoning on harder research fields. For such reason, and for giving nostalgia another ride, we decided to focus our work on \poke battles.
+
+\poke battles are an interesting \textit{multi-agent non-cooperative} environment in which two players have six \poke each and their goal is to defeat all the opponent's \textit{Pokémon}. Battles are based on atomic turns that are defined as the two moves chosen by the players and resolved simultaneously, such moves can fail given a probability called \textit{accuracy} and their \textit{secondary effects} have an impact on the next turns, for this reason the environment under consideration is also \textit{partially deterministic} and \textit{not episodic}.
+Moreover, both players do not have perfect knowledge of the environment and they can use this fact in order to gain an advantage over the opponent by switching out the active \poke or revealing a move or item that was not shown before.
+
+Our aim is not to build the perfect \poke battle bot (which is near to impossible given the stochasticity of this environment), but to build one that can stand its own against human players.
