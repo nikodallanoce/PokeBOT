@@ -1,0 +1,75 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Wenneker Article
+% LaTeX Template
+% Version 2.0 (28/2/17)
+%
+% This template was downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Vel (vel@LaTeXTemplates.com)
+% Frits Wenneker
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[10pt, a4paper, twocolumn]{article} % 10pt font size (11 and 12 also possible), A4 paper (letterpaper for US letter) and two column layout (remove for one column)
+
+\input{structure.tex} % Specifies the document structure and loads requires packages
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE INFORMATION
+%----------------------------------------------------------------------------------------
+\title{\vspace{-2cm}\textbf{PokéBOT, a Pokémon battle bot}}
+\author{\textbf{\small{\textit{Dalla Noce Niko, Lombardi Giuseppe, Ristori Alessandro}}} \\ % put your full name here
+        \small{Master Degree in Computer science.}\\ \small{\{n.dallanoce, g.lombardi11, a.ristori5\}@studenti.unipi.it} \\  % put your Master Degree here
+        \small{Artificial intelligence fundamentals, Academic Year: 2022/2023} \\
+        \textbf{\small{\url{https://github.com/nikodallanoce/PokeBOT}}} \\ \\
+        \includegraphics[width=0.10\textwidth]{unipi.png}
+}
+
+% Example of a one line author/institution relationship
+\date{\small{\today}} % Add a date here if you would like one to appear underneath the title block, use \today for the current date, leave empty for no date
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+\newcommand{\poke}{\textit{Pokémon}\space}
+
+\maketitle % Print the title
+
+
+\thispagestyle{firstpage} % Apply the page style for the first page (no headers and footers)
+\raggedbottom
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+\input{sections/introduction.tex}
+\input{sections/related_works.tex}
+\input{sections/methodologies.tex}
+\input{sections/assessment.tex}
+\section{Conclusion}\label{sec:conclusion}
+Building a \poke battle bot proved to be an exciting and motivating challenge and this project allowed us to apply some artificial intelligence methods, especially those regarding game theory and adversarial agents. 
+We overcame many difficulties while "evolving" our bot and its gradual refinement, that ended up in two different but near equally strong players, has resulted in an artificial "trainer" with the strength and behaviour of an average skilled human player, which was our initial aim.
+
+%-------------------------------------------------------------------------------
+%	BIBLIOGRAPHY
+%-------------------------------------------------------------------------------
+\newpage
+\onecolumn
+\setcitestyle{square}
+\bibliographystyle{plain}
+\bibliography{references}
+
+%-------------------------------------------------------------------------------
+\newpage
+\input{sections/appendix.tex}
+\end{document}

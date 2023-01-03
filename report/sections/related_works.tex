@@ -1,0 +1,6 @@
+\section{Related works}\label{sec:relatedworks}
+All of our players were thought to be developed in order to run on an online open-source \poke battle simulator \cite{remote_server} which was also vital for the performance's evaluation of our bot.
+
+For that reason, our work was mainly inspired by \cite{showdown_competition}, starting from that we looked for more implementations in order to give ourselves an overall idea about what to do. During our research we found the poke-env library \cite{poke_env} which gave us a very useful engine and some \textit{baseline} players that were essential for testing ours; the strongest baseline player of the library was the main metric of comparison of our work.
+
+The choice of players was, instead, based on implementations found on \textit{Github}, where we have found a small, but working, example of rule-based and minimax players \cite{rempton} and a bot that is considered among the best ones in the online community \cite{pmariglia}. The former is built on the poke-env library \cite{poke_env}, so we used it for defining the structure of our players, while the latter gave us ideas on how to improve the stats and damage computations.
