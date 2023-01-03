@@ -53,6 +53,11 @@ class MiniMaxPlayer(Player):
         self.toxic_turn: int = 0
 
     def choose_move(self, battle):
+        """
+        Overrides the poke_env library method and return the best action to do, either a Move or a Pokémon to switch
+        :param battle: current state of the battle
+        :return: the best action to do, either a Move or a Pokémon switch
+        """
 
         # Retrieve both active pokémon
         bot_pokemon: Pokemon = battle.active_pokemon
@@ -132,7 +137,19 @@ class MiniMaxPlayer(Player):
 
         return self.choose_random_move(battle)
 
-    def best_switch_on_matchup(self, battle, bot_pokemon, bot_team, opp_pokemon, terrains, weather):
+    def best_switch_on_matchup(self, battle: AbstractBattle, bot_pokemon: Pokemon, bot_team: List[Pokemon],
+                               opp_pokemon: Pokemon, terrains: List[Field], weather: Weather):
+        """
+        Chooses the best Pokémon that will take the filed, based on the matchup score
+        :param battle: current state of the battle
+        :param bot_pokemon: our Pokémon
+        :param bot_team: our team
+        :param opp_pokemon: opponent Pokémon
+        :param terrains: list of the active terrains in the battle
+        :param weather: the weather condition of a battle
+        :return: a tuple made up of the best Pokémon to switch, the matchup score, the probability to be faster than the
+        opponent Pokémon and the matchup of the entire team
+        """
         # Compute matchup scores for every remaining pokémon in the team
         bot_matchup = matchup_on_types(bot_pokemon, opp_pokemon)
         team_matchups = dict()
@@ -171,12 +188,12 @@ class MiniMaxPlayer(Player):
     def hit_if_act_poke_can_outspeed(battle: AbstractBattle, terrains: List[Field], opp_max_hp: int,
                                      opp_conditions: List) -> Tuple[bool, Move]:
         """
-        Compute a move that could defeat the opponent pokémon if ours is faster.
-        :param battle: current state of the battle.
-        :param terrains: current active field in the battle.
-        :param opp_max_hp: max health points of the opponent pokémon.
-        :param opp_conditions: the health state of the opponent pokémon.
-        :return: a tuple that indicated whether a move can defeat the opponent pokémon and the corresponding move.
+        Compute a move that could defeat the opponent Pokémon if ours is faster
+        :param battle: current state of the battle
+        :param terrains: current active field in the battle
+        :param opp_max_hp: max health points of the opponent Pokémon
+        :param opp_conditions: the health state of the opponent Pokémon
+        :return: a tuple that indicated whether a move can defeat the opponent Pokémon and the corresponding move
         """
         opp_hp = math.ceil(opp_max_hp * battle.opponent_active_pokemon.current_hp_fraction)
         for move in battle.available_moves:
@@ -210,10 +227,10 @@ class MiniMaxPlayer(Player):
 
     def get_best_move(self, battle: AbstractBattle, root_battle_status: BattleStatus) -> Pokemon | Move:
         """
-        Computes the best move or the best pokémon to switch.
-        :param battle: current state of the battle.
-        :param root_battle_status: root node from which the minimax algorithm starts.
-        :return: the best move or the best pokémon to switch.
+        Computes the best move or the best pokémon to switch
+        :param battle: current state of the battle
+        :param root_battle_status: root node from which the minimax algorithm starts
+        :return: the best move or the best pokémon to switch
         """
         ris = self.alphabeta(root_battle_status, 0, float('-inf'), float('+inf'), True)
         node: BattleStatus = ris[1]
@@ -232,13 +249,13 @@ class MiniMaxPlayer(Player):
                   beta: float,
                   is_my_turn: bool) -> Tuple[float, BattleStatus]:
         """
-        Build the minimax tree with alpha-beta pruning.
-        :param node: to start exploring from.
-        :param depth: current depth of the minimax tree. A level of depth equals to one turn of the game.
-        :param alpha: alpha value of the alpha-beta pruning. Initial call: alpha=-inf.
-        :param beta: beta value of the alpha-beta pruning. Initial call: beta=-inf.
-        :param is_my_turn: true if the bot attacks, false otherwise.
-        :return: a tuple containing the best game state with its value.
+        Build the minimax tree with alpha-beta pruning
+        :param node: to start exploring from
+        :param depth: current depth of the minimax tree. A level of depth equals to one turn of the game
+        :param alpha: alpha value of the alpha-beta pruning. Initial call: alpha=-inf
+        :param beta: beta value of the alpha-beta pruning. Initial call: beta=-inf
+        :param is_my_turn: true if the bot attacks, false otherwise
+        :return: a tuple containing the best game state with its value
         (* Initial call *) alphabeta(origin, 0, −inf, +inf, TRUE)
         """
         if depth == self.max_depth or self.is_terminal_node(node):
@@ -282,8 +299,8 @@ class MiniMaxPlayer(Player):
     def opponent_loose(node: BattleStatus) -> bool:
         """
         Checks whether the opponent player is defeated
-        :param node: a node representing a game state.
-        :return: a boolean indicating whether the opponent player is defeated.
+        :param node: a node representing a game state
+        :return: a boolean indicating whether the opponent player is defeated
         """
         return node.opp_poke.is_fainted() and len(node.opp_poke_avail_actions()) == 0
 
@@ -291,15 +308,15 @@ class MiniMaxPlayer(Player):
     def player_loose(node: BattleStatus) -> bool:
         """
         Checks whether our player is defeated
-        :param node: a node representing a game state.
-        :return: a boolean indicating whether our player is defeated.
+        :param node: a node representing a game state
+        :return: a boolean indicating whether our player is defeated
         """
         return node.act_poke.is_fainted() and len(node.act_poke_avail_actions()) == 0
 
     def is_terminal_node(self, node: BattleStatus) -> bool:
         """
-        Check if a node is a terminal node.
-        :param node: a node representing a game state.
-        :return: a boolean indicating whether a node is a terminal one.
+        Check if a node is a terminal node
+        :param node: a node representing a game state
+        :return: a boolean indicating whether a node is a terminal one
         """
         return self.player_loose(node) or self.opponent_loose(node)

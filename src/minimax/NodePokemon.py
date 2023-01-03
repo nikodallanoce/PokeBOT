@@ -15,6 +15,19 @@ class NodePokemon:
                  status: Status = None,
                  moves: List[Move] = None,
                  effects: Dict = None):
+
+        """
+        Instantiate a Pokémon node with the parameters that could change during the simulation of the progress of a
+        battle, that happens during the computation of the minimax tree
+        :param pokemon: a Pokémon
+        :param is_act_poke: true if it is the bot's Pokémon, false otherwise
+        :param current_hp: current simulated heath points of the Pokémon
+        :param boosts: current simulated statistics boost of the Pokémon
+        :param status: current simulated status of the Pokémon
+        :param moves: known moves of the Pokémon
+        :param effects: status effects of the Pokémon
+        """
+
         self.pokemon: Pokemon = pokemon
         self.poke = copy.deepcopy(pokemon)
         self.is_act_poke: bool = is_act_poke
@@ -48,15 +61,15 @@ class NodePokemon:
 
     def is_fainted(self) -> bool:
         """
-        Computes if the pokémon is fainted.
-        :return: true if the pokémon is fainted, false otherwise.
+        Computes if the pokémon is fainted
+        :return: true if the pokémon is fainted, false otherwise
         """
         return self.current_hp <= 0
 
     def clone_all(self):
         """
-        Clones all the fields of the current object.
-        :return: a copy of this object.
+        Clones all the fields of the current object
+        :return: a copy of this object
         """
         return NodePokemon(self.pokemon, self.is_act_poke, self.current_hp, self.boosts.copy(), self.status,
                            self.moves.copy(), self.effects.copy())
@@ -69,8 +82,8 @@ class NodePokemon:
               moves: list[Move] = None,
               effects: Dict = None):
         """
-        Clones the current object with the possibility of specifying some custom fields.
-        :return: a copy of this object.
+        Clones the current object with the possibility of specifying some custom fields
+        :return: a copy of this object
         """
         if is_act_poke is None:
             is_act_poke = self.is_act_poke
@@ -88,9 +101,9 @@ class NodePokemon:
 
     def retrieve_stats(self, weather: Weather, terrains: List[Field]):
         """
-        Computes the current pokémon statistics give the weather and the active terrains in a battle.
-        :param weather: current active weather.
-        :param terrains: current active terrains.
+        Computes the current pokémon statistics give the weather and the active terrains in a battle
+        :param weather: current active weather
+        :param terrains: current active terrains
         """
         computed_stats: dict[str, int] = self.pokemon.stats.copy()
         if not self.is_act_poke:
@@ -105,11 +118,11 @@ class NodePokemon:
 
     def enrich_moves(self, known_moves: List[Move]) -> List[Move]:
         """
-        Assigns default moves to a pokémon with the same type of the pokémon's ones if there are no known moves with
-        those type. If the known_moves have a different type with respect to this pokémon, they are joined to the
-        default ones.
-        :param known_moves: some known moves of this pokémon.
-        :return: a list of all the known moves plus the default ones.
+        Assigns default moves to a Pokémon with the same type of the Pokémon's ones if there are no known moves with
+        those type. If the known_moves have a different type with respect to this Pokémon, they are joined to the
+        default ones
+        :param known_moves: some known moves of this Pokémon
+        :return: a list of all the known moves plus the default ones
         """
         moves_added: List[Move] = []
         for poke_type in iter(self.pokemon.types):
