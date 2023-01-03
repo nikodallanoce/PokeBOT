@@ -6,14 +6,16 @@ from src.engine.stats import estimate_stat
 class SimpleHeuristic(Heuristic):
 
     def compute(self, battle_node: BattleStatus, depth: int) -> float:
+        """
+        Evaluate state in the minimax algorithm using only the knowledge of the two active Pokémon in the battle
+        :param battle_node: minimax node containing the state information
+        :param depth: depth of the node in the minimax tree
+        :return: evaluation score of the minimax node
+        """
         bot_hp = battle_node.act_poke.current_hp
         opp_hp = battle_node.opp_poke.current_hp
-        # bot_hp = (bot_hp / battle_node.act_poke.pokemon.max_hp) + bot_hp / 1e3
-
         opp_max_hp = estimate_stat(battle_node.opp_poke.pokemon, "hp")
-        # opp_hp = (opp_hp / opp_max_hp) + opp_hp / 1e3
-        # score = bot_hp - opp_hp - 0.2 * depth
-        score = (bot_hp / battle_node.act_poke.pokemon.max_hp) - 2 * (
+        score = (bot_hp / battle_node.act_poke.pokemon.max_hp) - (
                 opp_hp / opp_max_hp)
 
         return score
