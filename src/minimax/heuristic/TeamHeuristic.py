@@ -4,7 +4,7 @@ from src.minimax.heuristic.Heuristic import Heuristic
 from src.engine.stats import estimate_stat
 import numpy as np
 
-# Best parameters for now (I made only a very small random search)
+# Best parameters obtained by random search
 BEST_PARAMETERS = [0.29845110404242714, 0.12477383583753021, 0.18681976327640784, 0.3899552968436348]
 BEST_PENALTY = 0.036475451823316817
 
@@ -19,6 +19,12 @@ class TeamHeuristic(Heuristic):
         self.penalty: float = penalty
 
     def compute(self, battle_node: BattleStatus, depth: int) -> float:
+        """
+        Evaluate state in the minimax algorithm using all the knowledge about the bot team and the opponent team
+        :param battle_node: minimax node containing the state information
+        :param depth: depth of the node in the minimax tree
+        :return: evaluation score of the minimax node
+        """
         bot_hp = battle_node.act_poke.current_hp
         bot_max_hp = battle_node.act_poke.pokemon.max_hp
         team_hp = bot_hp / bot_max_hp
@@ -31,9 +37,7 @@ class TeamHeuristic(Heuristic):
 
         opp_hp = battle_node.opp_poke.current_hp
         opp_max_hp = estimate_stat(battle_node.opp_poke.pokemon, "hp")
-        # opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
-        opp_team_len = 0
-
+        opp_team_len = 6 - len([pokemon for pokemon in battle_node.opp_team if pokemon.fainted])
         b1 = self.parameters[0]
         b2 = self.parameters[1]
         m1 = self.parameters[2]

@@ -28,6 +28,11 @@ class RandomSearch:
         self.penalty_range: Tuple[float, float] = penalty_range
 
     async def compute(self, num_config: int = 10):
+        """
+        Perform random search on the parameters of the evaluation function of TeamHeuristic
+        :param num_config: number of random configuration to test
+        :return: list of the best parameters and the best penalty term
+        """
         # Dummy initialization
         max_ = float("-inf")
         best_parameters = [random.uniform(self.parameters_range[0], self.parameters_range[1]) for _ in
@@ -48,7 +53,6 @@ class RandomSearch:
             player = MiniMaxPlayer(player_configuration=PlayerConfiguration(self.bot_name + str(bot_players), None),
                                    heuristic=heuristic, max_depth=self.max_depth)
             cross_evaluation = await cross_evaluate([player, self.benchmark], n_challenges=self.n_matches)
-            # print(cross_evaluation)
             value = cross_evaluation[self.bot_name + str(bot_players)][self.opp_name]
             print(value)
             if value > max_:
@@ -57,7 +61,6 @@ class RandomSearch:
                 best_penalty = penalty
             bot_players += 1
 
-        # print(max_)
         print(best_parameters)
         print(best_penalty)
 
