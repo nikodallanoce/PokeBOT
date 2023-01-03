@@ -3,9 +3,7 @@ Artificial Intelligence Fundamentals project for the a.y. 2022/2023.
 - **Group name:** Elite Three 
 - **Group members:** [Niko Dalla Noce](https://github.com/nikodallanoce), [Giuseppe Lombardi](https://github.com/icezimmer), [Alessandro Ristori](https://github.com/RistoAle97)
 
-<div style="align:center">
 <img src="Elite Three.png" alt="Elite Three Logo" style="height: 200px; width:300px;"/>
-</div>
 
 ## Pokemon battle bot
 We developed a battle bot that you can play against on a [public server](https://play.pokemonshowdown.com/), the bot can assume different strategies depending on your choice.
