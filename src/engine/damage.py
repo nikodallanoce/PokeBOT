@@ -10,11 +10,11 @@ from typing import Union, List, Dict
 
 def move_fixed_damage(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> (bool, int):
     """
-    Computes the damage dealt by fixed-damage moves.
-    :param move: move under consideration
+    Computes the damage dealt by fixed-damage moves
+    :param move: the move under consideration
     :param move_type: move type
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :return: Boolean that states if the move has a fixed damage and the damage itself
     """
     fixed_damage = None
@@ -62,11 +62,11 @@ def compute_other_damage_modifiers(move: Move,
                                    weather: Weather,
                                    defender_conditions: List[SideCondition]) -> float:
     """
-    Computes the damage modifier considering various battle parameters.
+    Computes the damage modifier considering various battle parameters
     :param move: move under consideration
     :param move_type: move type
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :param weather: current battle weather
     :param defender_conditions: conditions on the opponent's side
     :return: Damage modifier that takes into account every battle parameter
@@ -141,7 +141,7 @@ def compute_other_damage_modifiers(move: Move,
             else:
                 damage_modifier *= 1.25
 
-    # Pokémon with the "rivalry" ability deal 1.25 more damage to pokémon of the same gender,
+    # Pokémon with the "rivalry" ability deal 1.25 more damage to Pokémon of the same gender,
     # while dealing 0.75 less damage to the ones from the opposite gender
     if attacker.ability == "rivalry" and PokemonGender.NEUTRAL not in [attacker.gender, defender.gender]:
         if attacker.gender == defender.gender:
@@ -169,7 +169,7 @@ def compute_other_damage_modifiers(move: Move,
         elif "contact" in move.flags:
             damage_modifier *= 0.5
 
-    # Pokémon with the "merciless" ability deal 1.5 more damage to poisoned pokémon
+    # Pokémon with the "merciless" ability deal 1.5 more damage to poisoned Pokémon
     if attacker.ability == "merciless" and defender.status in [Status.PSN, Status.TOX] \
             and defender.ability not in ["battlearmor", "shellarmour"]:
         damage_modifier *= 1.5
@@ -186,7 +186,7 @@ def compute_other_damage_modifiers(move: Move,
     if move.id == "knockoff" and defender.item:
         damage_modifier *= 1.5
 
-    # Some moves do double the damage against dynamaxed pokémon
+    # Some moves do double the damage against dynamaxed Pokémon
     if move.id in ["behemothblade", "behemothbash", "dynamaxcannon"] and defender.is_dynamaxed:
         damage_modifier *= 2
 
@@ -218,16 +218,16 @@ def compute_damage(move: Move,
                    is_bot: bool = False,
                    verbose: bool = False) -> Dict[str, Union[int | PokemonType]]:
     """
-    Computes the damage dealt by a move.
-    :param move: move under consideration
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    Computes the damage dealt by a move
+    :param move: the move under consideration
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :param weather: current battle weather
     :param terrains: current terrains on the battle
     :param defender_conditions: conditions on the opponent's side
     :param attacker_boosts: attacker's stat boosts
     :param defender_boosts: defender's stat boosts
-    :param is_bot: whether the bot is the attacking pokémon
+    :param is_bot: whether the bot is the attacking Pokémon
     :param verbose: print infos aobut the damage computation
     :return: Base power, lower and upper bound of the damage and the new move type
     """
@@ -347,11 +347,11 @@ def compute_damage(move: Move,
     # Compute the effect of the defender's types
     type_multiplier = defender.damage_multiplier(move_type)
 
-    # The move "freeze-dry" is super-effective against water-type pokémon
+    # The move "freeze-dry" is super-effective against water-type Pokémon
     if move.id == "freezedry" and PokemonType.ICE in defender.types:
         type_multiplier *= 2
 
-    # The move "thousand-arrows" can deal damage to flying-type pokémon
+    # The move "thousand-arrows" can deal damage to flying-type Pokémon
     if move.id == "thousandarrows" and PokemonType.FLYING in defender.types:
         first_type, second_type = defender.types
         if not second_type:
