@@ -49,6 +49,15 @@ class RuleBasedPlayer(Player):
                                   weather: Weather,
                                   terrains: List[Field],
                                   bot_conditions: List[SideCondition]) -> int:
+        """
+        Estimate the damage dealt by the opponent's Pokémon.
+        :param bot_pokemon: the bot's Pokémon
+        :param opp_pokemon: the opponent's Pokémon
+        :param weather: the current weather
+        :param terrains: the current active fields
+        :param bot_conditions: the conditions on the bot's side
+        :return: An estimation of the damage deal by the opponent's active Pokémon
+        """
         # Retrieve all the non-status moves
         opp_damage = [opp_move for opp_move in opp_pokemon.moves.values()
                       if opp_move.category is not MoveCategory.STATUS]
@@ -68,15 +77,15 @@ class RuleBasedPlayer(Player):
         return opp_damage
 
     def choose_move(self, battle):
-        # Retrieve both active pokémon
+        # Retrieve both active Pokémon
         bot_pokemon: Pokemon = battle.active_pokemon
         opp_pokemon: Pokemon = battle.opponent_active_pokemon
 
-        # Retrieve all the other pokémon in the team that are still alive
+        # Retrieve all the other Pokémon in the team that are still alive
         bot_team = [pokemon for pokemon in battle.team.values()
                     if pokemon is not bot_pokemon and not pokemon.fainted]
 
-        # Compute matchup scores for every remaining pokémon in the team
+        # Compute matchup scores for every remaining Pokémon in the team
         bot_matchup = matchup_on_types(bot_pokemon, opp_pokemon)
         team_matchups = dict()
         for pokemon in bot_team:
@@ -86,7 +95,7 @@ class RuleBasedPlayer(Player):
         if battle.turn == 1:
             self.best_stats_pokemon = max([sum(pokemon.base_stats.values()) for pokemon in battle.team.values()])
 
-        # If we switched pokémon, then update the bot's infos
+        # If we switched Pokémon, then update the bot's infos
         if not self.previous_pokemon:
             self.previous_pokemon = bot_pokemon
         elif bot_pokemon.species != self.previous_pokemon.species:
@@ -104,11 +113,11 @@ class RuleBasedPlayer(Player):
         bot_conditions: List[SideCondition] = battle_status["bot_conditions"]
         opp_conditions: List[SideCondition] = battle_status["opp_conditions"]
 
-        # Compute the best pokémon the bot can switch to
+        # Compute the best Pokémon the bot can switch to
         self.max_team_matchup = max(team_matchups.values()) if len(team_matchups) > 0 else -8
         best_switch = compute_best_switch(team_matchups, opp_pokemon, weather, terrains, self.max_team_matchup)
 
-        # Compute the hp of both pokémon
+        # Compute the hp of both Pokémon
         bot_hp = bot_pokemon.current_hp
         opp_max_hp = compute_stat(opp_pokemon, "hp", weather, terrains)
         opp_hp = int(opp_max_hp * opp_pokemon.current_hp_fraction)
@@ -134,7 +143,7 @@ class RuleBasedPlayer(Player):
             # Compute how much damage the opponent would deal
             opp_damage = self.__compute_opponent_damage(bot_pokemon, opp_pokemon, weather, terrains, bot_conditions)
 
-            # Compute the probability of outpseeding the opponent pokémon
+            # Compute the probability of outpseeding the opponent Pokémon
             outspeed_p, opp_spe_lb, opp_spe_ub = outspeed_prob(bot_pokemon, opp_pokemon, weather, terrains).values()
             if self.verbose:
                 print("{0} outspeeds {1} (spe stat from {2} to {3}) with probability: {4}\n"
@@ -194,7 +203,7 @@ class RuleBasedPlayer(Player):
             # Choose the move with the best accuracy
             best_damage_move = max(max_damage_moves, key=lambda move_accuracy: max_damage_moves[move_accuracy])
 
-            # Some moves work only when the pokémon has just been switched in
+            # Some moves work only when the Pokémon has just been switched in
             if bot_pokemon.first_turn and Field.PSYCHIC_TERRAIN not in terrains:
                 if "fakeout" in available_moves_ids and PokemonType.GHOST not in opp_pokemon.types \
                         and not opp_pokemon.is_dynamaxed:
@@ -216,14 +225,14 @@ class RuleBasedPlayer(Player):
 
                 return self.create_order(Gen8Move("explosion"))
 
-            # If the current pokémon outspeeds the opponent's pokémon, then deal the final hit if possible
+            # If the current Pokémon outspeeds the opponent's Pokémon, then deal the final hit if possible
             if (outspeed_p >= 0.9 or opp_damage / bot_hp < 0.3) and max_damage > opp_hp:
                 if self.verbose:
                     print("\nChosen move: {0}\n{1}".format(best_damage_move.id, "-" * 110))
 
                 return self.create_order(best_damage_move)
 
-            # If the current pokémon can defeat the opponent with a priority move, then use it
+            # If the current Pokémon can defeat the opponent with a priority move, then use it
             priority_moves: Dict[Move, int] = {move: infos["damage_lb"] for move, infos in bot_damage_moves.items()
                                                if infos["damage_lb"] > 0 and infos["priority"] > 0}
             for priority_move, damage in priority_moves.items():
@@ -233,7 +242,7 @@ class RuleBasedPlayer(Player):
 
                     return self.create_order(priority_move)
 
-            # Deal with pokémon that are defined as sleep-talkers
+            # Deal with Pokémon that are defined as sleep-talkers
             if sleep_talk:
                 if bot_matchup > -1:
                     if bot_pokemon.status is not Status.SLP:
@@ -259,7 +268,7 @@ class RuleBasedPlayer(Player):
 
                     return self.create_order(best_damage_move)
 
-            # Deal with stall pokémon
+            # Deal with stall Pokémon
             if "toxic" in available_moves_ids and len(bot_healing_moves) > 0:
                 if battle.available_switches and should_switch(bot_pokemon, bot_matchup, outspeed_p,
                                                                self.max_team_matchup, self.toxic_turn):
@@ -391,7 +400,7 @@ class RuleBasedPlayer(Player):
 
             return self.create_order(best_damage_move, dynamax=dynamax)
         elif battle.available_switches:
-            # Update the matchup for each remaining pokèmon in the team
+            # Update the matchup for each remaining Pokèmon in the team
             for pokemon in bot_team:
                 team_matchups.update({pokemon: matchup_on_types(pokemon, opp_pokemon)})
 

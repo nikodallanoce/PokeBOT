@@ -7,9 +7,9 @@ from src.engine.stats import estimate_stat, compute_stat
 
 def move_changes_type(move: Move, attacker: Pokemon) -> (bool, PokemonType):
     """
-    Computes the new type of the move if the attacker has an ability or item that changes it.
+    Computes the new type of the move if the attacker has an ability or item that changes it
     :param move: the move under consideration
-    :param attacker: the pokémon
+    :param attacker: the Pokémon
     :return: Boolean that states if the move has changed type and the new type itself
     """
     move_type = move.type
@@ -55,13 +55,13 @@ def compute_healing(attacker: Pokemon,
                     terrains: List[Field] = None,
                     is_bot: bool = False) -> (int, float):
     """
-    Compute the healing dealt by a move.
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    Compute the healing dealt by a move
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :param move: move under consideration
     :param weather: current battle weather
     :param terrains: current battle terrains
-    :param is_bot: whether the pokémon belongs to the bot's team
+    :param is_bot: whether the Pokémon belongs to the bot's team
     :return: Healing and healing percentage of the move
     """
     healing = None
@@ -82,7 +82,7 @@ def compute_healing(attacker: Pokemon,
         elif weather in [Weather.RAINDANCE, Weather.PRIMORDIALSEA, Weather.HAIL, Weather.SANDSTORM]:
             healing_percentage = 0.25
 
-    # We assume that bot doesn't heal the opponent's pokémon from its status conditions
+    # We assume that bot doesn't heal the opponent's Pokémon from its status conditions
     if move.id == "purify" and attacker.status not in STATUS_CONDITIONS:
         return 0, 0
 
@@ -119,11 +119,11 @@ def compute_healing(attacker: Pokemon,
 
 def compute_drain(pokemon: Pokemon, move: Move, damage: int, is_bot: False) -> (int, float):
     """
-    Compute the draining effect of a move.
-    :param pokemon: attacking pokémon
+    Compute the draining effect of a move
+    :param pokemon: attacking Pokémon
     :param move: move under consideration
     :param damage: damage dealt by the move
-    :param is_bot: whether the pokémon belongs to the bot's team
+    :param is_bot: whether the Pokémon belongs to the bot's team
     :return: Drain and drain percentage dealt by the move
     """
     if move.drain == 0:
@@ -144,12 +144,12 @@ def compute_drain(pokemon: Pokemon, move: Move, damage: int, is_bot: False) -> (
 
 def compute_recoil(pokemon: Pokemon, move: Move, damage: int, is_bot: bool = False) -> int:
     """
-    Computes the recoil dealt by a move.
-    :param pokemon: attacking pokémon
+    Computes the recoil dealt by a move
+    :param pokemon: attacking Pokémon
     :param move: move under consideration
     :param damage: damage dealt by the move
-    :param is_bot: whether the pokémon belongs to the bot's team
-    :return: Recoil dealt by the move.
+    :param is_bot: whether the Pokémon belongs to the bot's team
+    :return: Recoil dealt by the move
     """
     if move.recoil == 0 or pokemon.ability == "magicguard":
         return 0

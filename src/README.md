@@ -15,7 +15,7 @@ This is the main directory of our project which hosts the engine, players and ot
 │   │   ├── 📄Heuristic.py  # abstract class for the heuristics
 │   │   └── 📄...  # various heuristics used in the project
 │   ├── 📄BattleStatus.py  # methods that deal with a minimax node
-│   ├── 📄NodePokemon.py  # methods for updating informations about pokémon in a minimax node
+│   ├── 📄NodePokemon.py  # methods for updating informations about Pokémon in a minimax node
 │   └── 📄RandomSearch.py  # random search to look for hyper-parameters
 ├── 📂players  # the bot's playstyles
 │   ├── 📄baseline_player.py  # MaxBasePower and BestDamage players

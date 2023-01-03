@@ -8,12 +8,12 @@ from typing import Union
 
 def base_power_modifiers_moves(move: Move, attacker: Pokemon, defender: Pokemon) -> float:
     """
-    Computes the modifiers of a move's base power considering the move itself.
+    Computes the modifiers of a move's base power considering the move itself
     :param move: move under consideration
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :return: Base power modifier that takes into account abilities and items
-        """
+    """
     base_power_modifier = 1
 
     # The power of the move "facade" is doubled if the user has a status condition
@@ -44,11 +44,11 @@ def base_power_modifiers_moves(move: Move, attacker: Pokemon, defender: Pokemon)
 
 def base_power_modifiers_abilities(move: Move, move_type: PokemonType, attacker: Pokemon, defender: Pokemon) -> float:
     """
-    Computes the modifiers of a move's base power considering the abilities of both active pokémon.
+    Computes the modifiers of a move's base power considering the abilities of both active Pokémon
     :param move: move under consideration
     :param move_type: move type
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :return: Base power modifier that takes into account abilities and items
     """
     base_power_modifier = 1
@@ -56,7 +56,7 @@ def base_power_modifiers_abilities(move: Move, move_type: PokemonType, attacker:
     if "neutralizinggas" in [attacker.ability, defender.ability]:
         return 1
 
-    # Moves of pokémon with the following abilities have their power increased if their hp is less or equal than 1/3
+    # Moves of Pokémon with the following abilities have their power increased if their hp is less or equal than 1/3
     if attacker.current_hp_fraction <= 0.33:
         if attacker.ability == "overgrow" and move_type is PokemonType.GRASS:
             base_power_modifier *= 1.5
@@ -106,17 +106,17 @@ def base_power_modifiers_abilities(move: Move, move_type: PokemonType, attacker:
     if attacker.ability == "punkrock" and "sound" in move.flags:
         base_power_modifier *= 1.3
 
-    # If a pokémon with the "dark aura" ability is active, the power of dark-type moves is increased
+    # If a Pokémon with the "dark aura" ability is active, the power of dark-type moves is increased
     if "darkaura" in [attacker.ability, defender.ability] and move_type is PokemonType.DARK:
-        # If a pokémon with the "aura break" ability is active, the power of dark-type moves is decreased
+        # If a Pokémon with the "aura break" ability is active, the power of dark-type moves is decreased
         if "aurabreak" not in [attacker.ability, defender.ability]:
             base_power_modifier *= 1.33
         elif attacker.ability not in IGNORE_EFFECT_ABILITIES_IDS:
             base_power_modifier *= 0.75
 
-    # If a pokémon with the "fairy aura" ability is active, the power of fairy-type moves is increased
+    # If a Pokémon with the "fairy aura" ability is active, the power of fairy-type moves is increased
     if "fairyaura" in [attacker.ability, defender.ability] and move_type is PokemonType.FAIRY:
-        # If a pokémon with the "aura break" ability is active, the power of fairy-type moves is decreased
+        # If a Pokémon with the "aura break" ability is active, the power of fairy-type moves is decreased
         if "aurabreak" not in [attacker.ability, defender.ability]:
             base_power_modifier *= 1.33
         elif attacker.ability not in IGNORE_EFFECT_ABILITIES_IDS:
@@ -160,10 +160,10 @@ def base_power_modifiers_abilities(move: Move, move_type: PokemonType, attacker:
 
 def base_power_modifiers_items(move: Move, move_type: PokemonType, attacker: Pokemon) -> float:
     """
-    Computes the modifiers of a move's base power considering the items of the active pokémon.
+    Computes the modifiers of a move's base power considering the items of the active Pokémon
     :param move: move under consideration
     :param move_type: move type
-    :param attacker: attacking pokémon
+    :param attacker: attacking Pokémon
     :return: Base power modifier that takes into account abilities and items
     """
     if attacker.item is None or attacker.item == "unknown_item":
@@ -256,11 +256,11 @@ def compute_base_power(move: Move,
                        defender: Pokemon,
                        modifier: bool = False) -> Union[float, int]:
     """
-    Compute the base power of a move considering the move itself, the abilities of both active pokémon and their items.
+    Compute the base power of a move considering the move itself, the abilities of both active Pokémon and their items
     :param move: move under consideration
     :param move_type: the current type of the move
-    :param attacker: attacking pokémon
-    :param defender: defending pokémon
+    :param attacker: attacking Pokémon
+    :param defender: defending Pokémon
     :param modifier: if the modifier is given instead of the actual base power
     :return: the actual base power or the modifier
     """
