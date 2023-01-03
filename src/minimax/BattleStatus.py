@@ -17,7 +17,7 @@ class BattleStatus:
                  weather: Dict[Weather, int], terrains: List[Field], opp_conditions: List[SideCondition], ancestor,
                  move: Move | Pokemon, poke_switched: bool):
         """
-        Instantiate a node representing the simulated status of the battle progress.
+        Instantiate a node representing the simulated status of the battle progress
         :param act_poke: bot Pokémon
         :param opp_poke: opponent Pokémon
         :param avail_switches: a list of Pokémon from which we can switch the one currently on the field

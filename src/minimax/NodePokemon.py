@@ -18,14 +18,14 @@ class NodePokemon:
 
         """
         Instantiate a Pokémon node with the parameters that could change during the simulation of the progress of a
-        battle, that happens during the computation of the minimax tree.
+        battle, that happens during the computation of the minimax tree
         :param pokemon: a Pokémon
         :param is_act_poke: true if it is the bot's Pokémon, false otherwise
         :param current_hp: current simulated heath points of the Pokémon
         :param boosts: current simulated statistics boost of the Pokémon
         :param status: current simulated status of the Pokémon
         :param moves: known moves of the Pokémon
-        :param effects: status effects of the Pokémon.
+        :param effects: status effects of the Pokémon
         """
 
         self.pokemon: Pokemon = pokemon
