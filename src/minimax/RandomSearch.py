@@ -18,6 +18,16 @@ class RandomSearch:
                  parameters_range: Tuple[float, float] = (0, 1),
                  penalty_range: Tuple[float, float] = (0, 0.05),
                  ):
+        """
+        Initialize the RandomSearch class to perform the random search on the TeamHeuristic parameters
+        :param bot_name: name of the bot
+        :param heuristic: heuristic to test for the random search
+        :param max_depth: max depth for the minimax algorithm
+        :param benchmark: opponent player for the benchmark
+        :param n_matches: number of matches
+        :param parameters_range: range for the parameters search
+        :param penalty_range: range for the penalty search
+        """
         self.bot_name: str = bot_name
         self.max_depth: int = max_depth
         self.opp_name: str = benchmark.username
